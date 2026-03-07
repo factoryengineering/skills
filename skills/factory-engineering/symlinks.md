@@ -1,6 +1,6 @@
 # Symlinks
 
-Canonical **commands and workflows** live in **`.claude/commands/`**. Canonical **skills** live in **`.claude/skills/`**. Each IDE looks in different folders. The scripts create symlinks so one folder of each type works everywhere.
+Canonical **commands and workflows** live in **`.claude/commands/`**. Canonical **skills** live in **`.claude/skills/`**. Each IDE looks in different folders. The scripts create links so one folder of each type works everywhere.
 
 **Supported IDEs:** Cursor, Windsurf, Kilo Code, Antigravity. Cursor and GitHub Copilot read `.claude/skills/` directly—no skills symlink. For Copilot commands use sync (see [sync-copilot-prompts.md](sync-copilot-prompts.md)).
 
@@ -20,7 +20,9 @@ Canonical **commands and workflows** live in **`.claude/commands/`**. Canonical 
    - **Skills:** `.windsurf/skills`, `.kilocode/skills`, `.agent/skills` → `.claude/skills` (Cursor and Copilot read `.claude/skills/` directly; no skills symlink.)
    If a target exists and is **not** already a symlink to the canonical folder: inform the user and **offer** to copy existing contents into the canonical folder and then replace with a symlink. If they agree, run with `--copy-existing` / `-CopyExisting`.
 
-4. **Create symlinks.** From repo root: Bash `scripts/setup-symlinks.sh` or PowerShell `scripts/Setup-Symlinks.ps1`. Pass IDEs (e.g. `--ide cursor,windsurf` or `-Ide cursor,windsurf`). Use `--type all` (default) for both commands and skills; `--type commands` or `--type skills` for one. If the script reports an existing target, return to step 3.
+4. **Create links.** From repo root: Bash `scripts/setup-symlinks.sh` or PowerShell `scripts/Setup-Symlinks.ps1`. Pass IDEs (e.g. `--ide cursor,windsurf` or `-Ide "cursor,windsurf"`). Use `--type all` (default) for both commands and skills; `--type commands` or `--type skills` for one. If the script reports an existing target, return to step 3.
+   - Use `-Plan` first on PowerShell to preview actions without changing files.
+   - On Windows, the script attempts symbolic links first and falls back to junctions when symlink privileges are unavailable. To require symbolic links only, pass `-NoJunctionFallback`.
 
 5. **Commit.** Recommend committing symlinks and any new files under `.claude/commands` or `.claude/skills`.
 
@@ -46,9 +48,15 @@ Default `--type all` creates both command and skill symlinks. If a target is an 
 | Goal | Command |
 |------|---------|
 | Detect | `.\scripts\Setup-Symlinks.ps1 -Detect` |
-| Create symlinks | `.\scripts\Setup-Symlinks.ps1 [-Type commands\|skills\|all] -Ide cursor,windsurf,kilocode,antigravity` |
+| Preview actions | `.\scripts\Setup-Symlinks.ps1 -Plan -Ide "cursor,kilocode"` |
+| Create links | `.\scripts\Setup-Symlinks.ps1 [-Type commands\|skills\|all] -Ide "cursor,windsurf,kilocode,antigravity"` |
 | Copy existing then symlink | `-CopyExisting` |
+| Require symlink (no junction fallback) | `-NoJunctionFallback` |
 | Repo root | `-RepoRoot C:\path\to\repo` |
+
+PowerShell note: quote the IDE list (`-Ide "cursor,kilocode"`). Unquoted comma-separated values can be treated as an array and fail binding in some environments.
+
+Windows note: symlink creation may require elevated terminal or Developer Mode. If unavailable, the script falls back to junctions unless `-NoJunctionFallback` is used.
 
 ---
 

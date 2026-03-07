@@ -1,13 +1,14 @@
-# Set up symlinks so .claude/commands and .claude/skills are available in each IDE.
+# Set up links so .claude/commands and .claude/skills are available in each IDE.
 # Run from repository root. See SKILL.md (factory-engineering skill) for full workflow.
 #
 # Usage:
 #   .\Setup-Symlinks.ps1 -Detect
-#   .\Setup-Symlinks.ps1 -Ide cursor,windsurf,kilocode,antigravity
+#   .\Setup-Symlinks.ps1 -Ide "cursor,windsurf,kilocode,antigravity"
 #   .\Setup-Symlinks.ps1 -Type all -Ide cursor
 #   .\Setup-Symlinks.ps1 -Ide cursor -CopyExisting
 #   .\Setup-Symlinks.ps1 -RepoRoot C:\path\to\repo -Ide cursor
-
+#   .\Setup-Symlinks.ps1 -Ide "cursor,kilocode" -Plan
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
     [string]$RepoRoot = (Get-Location).Path,
@@ -17,9 +18,13 @@ param(
     [Parameter(Mandatory = $false)]
     [switch]$Detect,
     [Parameter(Mandatory = $false)]
-    [string]$Ide,
+    [string[]]$Ide,
     [Parameter(Mandatory = $false)]
-    [switch]$CopyExisting
+    [switch]$CopyExisting,
+    [Parameter(Mandatory = $false)]
+    [switch]$Plan,
+    [Parameter(Mandatory = $false)]
+    [switch]$NoJunctionFallback
 )
 
 $ErrorActionPreference = 'Stop'
@@ -52,17 +57,34 @@ function Get-DetectedIdes {
 function New-SymlinkForTarget {
     param(
         [string]$root,
+        [string]$ideName,
         [string]$targetRelativePath,
         [string]$canonicalDir,
-        [bool]$copyExisting
+        [bool]$copyExisting,
+        [bool]$planOnly,
+        [bool]$allowJunctionFallback
     )
     $targetPath = Join-Path $root $targetRelativePath
     $parentDir = Split-Path -Parent $targetPath
     $existingMsg = "Target $targetPath already exists. Use -CopyExisting to copy its contents to $canonicalDir and then create the symlink."
+    $canonicalFull = Join-Path $root $canonicalDir
 
-    if (Test-Path -LiteralPath $targetPath -PathType Container) {
+    if ($planOnly) {
+        if (Test-Path -LiteralPath $targetPath) {
+            $existing = Get-Item -LiteralPath $targetPath -Force
+            $isLink = [bool]($existing.Attributes -band [System.IO.FileAttributes]::ReparsePoint)
+            $existingType = if ($isLink) { "link ($($existing.LinkType)) -> $($existing.Target)" } elseif ($existing.PSIsContainer) { "directory" } else { "file" }
+            Write-Host "[PLAN][$ideName] $targetRelativePath exists as $existingType"
+        } else {
+            Write-Host "[PLAN][$ideName] $targetRelativePath will be created"
+        }
+        Write-Host "[PLAN][$ideName] link target: $canonicalFull"
+        return 0
+    }
+
+    if (Test-Path -LiteralPath $targetPath) {
         $item = Get-Item -LiteralPath $targetPath -Force
-        if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        if ([bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
             $linkTarget = $item.Target
             if ($linkTarget -and ($linkTarget -match "\.claude[\\/](commands|skills)$")) {
                 Write-Host "Already a symlink: $targetPath"
@@ -70,34 +92,46 @@ function New-SymlinkForTarget {
             }
             Write-Error "$targetPath is a symlink but not to $canonicalDir."
         }
-        if ($item.PSIsContainer -and -not ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        if ($item.PSIsContainer) {
             if ($copyExisting) {
                 Write-Host "Copying existing $targetPath into $canonicalDir ..."
-                $canonicalFull = Join-Path $root $canonicalDir
-                if (-not (Test-Path -LiteralPath $canonicalFull)) {
-                    New-Item -ItemType Directory -Path $canonicalFull -Force | Out-Null
-                }
                 Get-ChildItem -LiteralPath $targetPath -Force | Copy-Item -Destination $canonicalFull -Recurse -Force
                 Remove-Item -LiteralPath $targetPath -Recurse -Force
             } else {
                 Write-Error $existingMsg
             }
+        } else {
+            Write-Error "Target $targetPath already exists as a file. Remove it first."
         }
     }
 
-    $canonicalFull = Join-Path $root $canonicalDir
     if (-not (Test-Path -LiteralPath $canonicalFull)) {
         New-Item -ItemType Directory -Path $canonicalFull -Force | Out-Null
     }
+    $canonicalFull = (Resolve-Path -LiteralPath $canonicalFull).Path
 
     if (-not (Test-Path -LiteralPath $parentDir)) {
         New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
     }
 
-    $relativeTarget = '..' + [IO.Path]::DirectorySeparatorChar + $canonicalDir -replace '/', [IO.Path]::DirectorySeparatorChar
+    try {
+        New-Item -ItemType SymbolicLink -Path $targetPath -Target $canonicalFull -Force | Out-Null
+        Write-Host "Created symbolic link: $targetPath -> $canonicalFull"
+    } catch {
+        if (-not $allowJunctionFallback) {
+            throw
+        }
+        Write-Host "Symbolic link creation failed for $targetPath. Falling back to junction."
+        $cmd = "mklink /J `"$targetPath`" `"$canonicalFull`""
+        $null = cmd /c $cmd
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to create junction: $targetPath -> $canonicalFull"
+        }
+        Write-Host "Created junction: $targetPath -> $canonicalFull"
+    }
 
-    New-Item -ItemType SymbolicLink -Path $targetPath -Target $relativeTarget -Force | Out-Null
-    Write-Host "Created: $targetPath -> $relativeTarget"
+    $createdItem = Get-Item -LiteralPath $targetPath -Force
+    Write-Host ("Verified: {0} | LinkType={1} | Target={2}" -f $targetPath, $createdItem.LinkType, $createdItem.Target)
     return 0
 }
 
@@ -118,7 +152,12 @@ if (-not $Ide) {
     Write-Error "Specify -Ide cursor,windsurf,kilocode,antigravity or run with -Detect first."
 }
 
-$ideList = $Ide -split '[,;\s]+' | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ }
+$ideList = @(
+    $Ide |
+        ForEach-Object { $_ -split '[,;\s]+' } |
+        ForEach-Object { $_.Trim().ToLowerInvariant() } |
+        Where-Object { $_ }
+)
 $validIdes = @('cursor', 'windsurf', 'kilocode', 'antigravity')
 foreach ($ide in $ideList) {
     if ($ide -notin $validIdes) {
@@ -130,12 +169,12 @@ $exitCode = 0
 foreach ($ide in $ideList) {
     try {
         if ($Type -eq 'commands' -or $Type -eq 'all') {
-            New-SymlinkForTarget -root $repoFull -targetRelativePath $targetsCommands[$ide] -canonicalDir $canonicalCommands -copyExisting $CopyExisting.IsPresent
+            $null = New-SymlinkForTarget -root $repoFull -ideName $ide -targetRelativePath $targetsCommands[$ide] -canonicalDir $canonicalCommands -copyExisting $CopyExisting.IsPresent -planOnly $Plan.IsPresent -allowJunctionFallback (-not $NoJunctionFallback.IsPresent)
         }
         if ($Type -eq 'skills' -or $Type -eq 'all') {
             $skillsTarget = $targetsSkills[$ide]
             if ($skillsTarget) {
-                New-SymlinkForTarget -root $repoFull -targetRelativePath $skillsTarget -canonicalDir $canonicalSkills -copyExisting $CopyExisting.IsPresent
+                $null = New-SymlinkForTarget -root $repoFull -ideName $ide -targetRelativePath $skillsTarget -canonicalDir $canonicalSkills -copyExisting $CopyExisting.IsPresent -planOnly $Plan.IsPresent -allowJunctionFallback (-not $NoJunctionFallback.IsPresent)
             }
         }
     } catch {

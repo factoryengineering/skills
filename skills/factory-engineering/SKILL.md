@@ -24,7 +24,7 @@ For Copilot commands, use sync (symlinks do not apply).
 
 Workflow, script options, and mapping tables: **[symlinks.md](symlinks.md)**.
 
-Run scripts from the **repository root**. Bash: `scripts/setup-symlinks.sh`. PowerShell: `scripts/Setup-Symlinks.ps1`. Use `--detect` / `-Detect` to list IDEs before creating symlinks; use `--copy-existing` / `-CopyExisting` to merge existing target folders into the canonical folder first.
+Run scripts from the **repository root**. Bash: `scripts/setup-symlinks.sh`. PowerShell: `scripts/Setup-Symlinks.ps1`. Use `--detect` / `-Detect` to list IDEs before creating symlinks; use `--copy-existing` / `-CopyExisting` to merge existing target folders into the canonical folder first. On Windows PowerShell, pass IDE lists as a quoted string (`-Ide "cursor,kilocode"`), and use `-Plan` to preview actions before changes.
 
 ---
 
