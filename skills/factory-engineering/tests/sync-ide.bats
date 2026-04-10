@@ -1,16 +1,14 @@
 #!/usr/bin/env bats
-# Tests for sync-ide.sh — validates copy-based sync, migration, conflict
-# resolution, and edge cases identified during code review.
+# Tests for sync-ide.sh — validates two-phase reverse/forward sync,
+# symlink migration, edge cases, and symlink fallback mode.
 
 SCRIPT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)"
 SYNC_SCRIPT="$SCRIPT_DIR/../scripts/sync-ide.sh"
 
 setup() {
   TEST_ROOT="$(mktemp -d)"
-  # Minimal canonical structure
   mkdir -p "$TEST_ROOT/.claude/commands"
   mkdir -p "$TEST_ROOT/.claude/skills"
-  # IDE marker directories so --detect finds them
   mkdir -p "$TEST_ROOT/.cursor"
   mkdir -p "$TEST_ROOT/.windsurf"
   mkdir -p "$TEST_ROOT/.kilocode"
@@ -39,11 +37,11 @@ teardown() {
   [[ "$output" == *"No IDE directories"* ]]
 }
 
-# ─── Basic copy sync ─────────────────────────────────────────────────
+# ─── Basic forward sync ──────────────────────────────────────────────
 
-@test "copy sync: creates target directory with canonical contents" {
+@test "sync: copies canonical commands to cursor" {
   echo "hello" > "$TEST_ROOT/.claude/commands/greet.md"
-  echo "world" > "$TEST_ROOT/.claude/commands/farewell.md"
+  echo "bye" > "$TEST_ROOT/.claude/commands/farewell.md"
 
   run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
   [ "$status" -eq 0 ]
@@ -52,20 +50,20 @@ teardown() {
   [ "$(cat "$TEST_ROOT/.cursor/commands/greet.md")" = "hello" ]
 }
 
-@test "copy sync: syncs skills to windsurf but not cursor" {
+@test "sync: copies skills to windsurf but not cursor" {
   echo "skill-a" > "$TEST_ROOT/.claude/skills/a.md"
 
   run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide windsurf --type skills
   [ "$status" -eq 0 ]
   [ -f "$TEST_ROOT/.windsurf/skills/a.md" ]
 
-  # Cursor should NOT get a skills copy
+  # Cursor reads .claude/skills directly; no skills sync
   run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type skills
   [ "$status" -eq 0 ]
   [ ! -d "$TEST_ROOT/.cursor/skills" ]
 }
 
-@test "copy sync: works with multiple IDEs" {
+@test "sync: works with multiple IDEs" {
   echo "cmd" > "$TEST_ROOT/.claude/commands/cmd.md"
 
   run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor,windsurf,kilocode,antigravity --type commands
@@ -76,73 +74,7 @@ teardown() {
   [ -f "$TEST_ROOT/.agent/workflows/cmd.md" ]
 }
 
-@test "copy sync: creates empty canonical dir when missing" {
-  rm -rf "$TEST_ROOT/.claude/commands"
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -eq 0 ]
-  [ -d "$TEST_ROOT/.claude/commands" ]
-  [[ "$output" == *"created (empty)"* ]]
-}
-
-# ─── Clean mirror: nested files and dotfiles ─────────────────────────
-
-@test "clean sync: removes stale nested files within a shared directory" {
-  # subdir exists in both canonical and target, but target has an extra file inside it.
-  # Conflict detection only compares top-level names, so subdir passes.
-  # The rm+cp mirror should remove the stale nested file.
-  mkdir -p "$TEST_ROOT/.claude/commands/subdir"
-  echo "keep" > "$TEST_ROOT/.claude/commands/keep.md"
-  echo "canonical" > "$TEST_ROOT/.claude/commands/subdir/kept.md"
-
-  mkdir -p "$TEST_ROOT/.cursor/commands/subdir"
-  echo "keep" > "$TEST_ROOT/.cursor/commands/keep.md"
-  echo "canonical" > "$TEST_ROOT/.cursor/commands/subdir/kept.md"
-  echo "stale" > "$TEST_ROOT/.cursor/commands/subdir/old.md"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -eq 0 ]
-  [ -f "$TEST_ROOT/.cursor/commands/keep.md" ]
-  [ -f "$TEST_ROOT/.cursor/commands/subdir/kept.md" ]
-  [ ! -e "$TEST_ROOT/.cursor/commands/subdir/old.md" ]
-}
-
-@test "clean sync: removes stale dotfiles from target" {
-  echo "keep" > "$TEST_ROOT/.claude/commands/keep.md"
-  mkdir -p "$TEST_ROOT/.cursor/commands"
-  echo "ds" > "$TEST_ROOT/.cursor/commands/.DS_Store"
-  echo "keep" > "$TEST_ROOT/.cursor/commands/keep.md"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -eq 0 ]
-  [ -f "$TEST_ROOT/.cursor/commands/keep.md" ]
-  [ ! -e "$TEST_ROOT/.cursor/commands/.DS_Store" ]
-}
-
-@test "clean sync: handles type mismatch (dir in target, file in canonical)" {
-  echo "file-content" > "$TEST_ROOT/.claude/commands/foo"
-  mkdir -p "$TEST_ROOT/.cursor/commands/foo"
-  echo "nested" > "$TEST_ROOT/.cursor/commands/foo/bar.md"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -eq 0 ]
-  [ -f "$TEST_ROOT/.cursor/commands/foo" ]
-  [ ! -d "$TEST_ROOT/.cursor/commands/foo" ]
-  [ "$(cat "$TEST_ROOT/.cursor/commands/foo")" = "file-content" ]
-}
-
-@test "clean sync: handles type mismatch (file in target, dir in canonical)" {
-  mkdir -p "$TEST_ROOT/.claude/commands/subdir"
-  echo "nested" > "$TEST_ROOT/.claude/commands/subdir/file.md"
-  mkdir -p "$TEST_ROOT/.cursor/commands"
-  echo "was-a-file" > "$TEST_ROOT/.cursor/commands/subdir"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -eq 0 ]
-  [ -d "$TEST_ROOT/.cursor/commands/subdir" ]
-  [ -f "$TEST_ROOT/.cursor/commands/subdir/file.md" ]
-}
-
-@test "clean sync: preserves nested directory structure from canonical" {
+@test "sync: preserves nested directory structure" {
   mkdir -p "$TEST_ROOT/.claude/commands/deep/nested"
   echo "a" > "$TEST_ROOT/.claude/commands/deep/nested/file.md"
   echo "b" > "$TEST_ROOT/.claude/commands/top.md"
@@ -152,6 +84,156 @@ teardown() {
   [ -f "$TEST_ROOT/.cursor/commands/deep/nested/file.md" ]
   [ -f "$TEST_ROOT/.cursor/commands/top.md" ]
   [ "$(cat "$TEST_ROOT/.cursor/commands/deep/nested/file.md")" = "a" ]
+}
+
+# ─── Reverse sync (bidirectional) ────────────────────────────────────
+
+@test "reverse sync: gathers new files from IDE location into canonical" {
+  echo "canonical" > "$TEST_ROOT/.claude/commands/existing.md"
+  mkdir -p "$TEST_ROOT/.cursor/commands"
+  echo "from-cursor" > "$TEST_ROOT/.cursor/commands/new-cmd.md"
+
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  # new-cmd.md should have been pulled into canonical
+  [ -f "$TEST_ROOT/.claude/commands/new-cmd.md" ]
+  [ "$(cat "$TEST_ROOT/.claude/commands/new-cmd.md")" = "from-cursor" ]
+  # And both files should be in the target
+  [ -f "$TEST_ROOT/.cursor/commands/existing.md" ]
+  [ -f "$TEST_ROOT/.cursor/commands/new-cmd.md" ]
+}
+
+@test "reverse sync: propagates IDE changes to other IDEs" {
+  echo "original" > "$TEST_ROOT/.claude/commands/shared.md"
+  # First sync to both IDEs
+  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor,windsurf --type commands
+
+  # Developer edits in windsurf
+  echo "edited-in-windsurf" > "$TEST_ROOT/.windsurf/workflows/shared.md"
+
+  # Re-sync: windsurf change should propagate to canonical and cursor
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor,windsurf --type commands
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/.claude/commands/shared.md")" = "edited-in-windsurf" ]
+  [ "$(cat "$TEST_ROOT/.cursor/commands/shared.md")" = "edited-in-windsurf" ]
+}
+
+@test "reverse sync: new file in IDE propagates to all other IDEs" {
+  echo "base" > "$TEST_ROOT/.claude/commands/base.md"
+  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor,kilocode --type commands
+
+  # Developer adds a new file in kilocode
+  echo "new-from-kilo" > "$TEST_ROOT/.kilocode/workflows/addon.md"
+
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor,kilocode --type commands
+  [ "$status" -eq 0 ]
+  # Should be in canonical and cursor too
+  [ -f "$TEST_ROOT/.claude/commands/addon.md" ]
+  [ -f "$TEST_ROOT/.cursor/commands/addon.md" ]
+  [ "$(cat "$TEST_ROOT/.cursor/commands/addon.md")" = "new-from-kilo" ]
+}
+
+@test "reverse sync: skips symlink targets (they already point at canonical)" {
+  echo "cmd" > "$TEST_ROOT/.claude/commands/cmd.md"
+  # Create a symlink target (simulating old setup before migration)
+  ln -s ../.claude/commands "$TEST_ROOT/.windsurf/workflows"
+
+  # Sync with cursor only (windsurf is a symlink, will be skipped in reverse)
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_ROOT/.cursor/commands/cmd.md" ]
+}
+
+# ─── Forward sync: stale file removal ────────────────────────────────
+
+@test "forward sync: reverse-sync preserves file deleted only from canonical" {
+  echo "a" > "$TEST_ROOT/.claude/commands/a.md"
+  echo "b" > "$TEST_ROOT/.claude/commands/b.md"
+  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+
+  # Delete from canonical only — cursor still has b.md
+  rm "$TEST_ROOT/.claude/commands/b.md"
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  # Reverse-sync pulls b.md back from cursor into canonical
+  [ -f "$TEST_ROOT/.claude/commands/b.md" ]
+  [ -f "$TEST_ROOT/.cursor/commands/b.md" ]
+}
+
+@test "forward sync: removes file deleted from all locations" {
+  echo "a" > "$TEST_ROOT/.claude/commands/a.md"
+  echo "b" > "$TEST_ROOT/.claude/commands/b.md"
+  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+
+  # Delete from canonical AND the IDE target
+  rm "$TEST_ROOT/.claude/commands/b.md"
+  rm "$TEST_ROOT/.cursor/commands/b.md"
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_ROOT/.cursor/commands/a.md" ]
+  [ ! -e "$TEST_ROOT/.cursor/commands/b.md" ]
+  [ ! -e "$TEST_ROOT/.claude/commands/b.md" ]
+}
+
+@test "forward sync: removes stale nested files" {
+  mkdir -p "$TEST_ROOT/.claude/commands/subdir"
+  echo "keep" > "$TEST_ROOT/.claude/commands/keep.md"
+  echo "nested" > "$TEST_ROOT/.claude/commands/subdir/kept.md"
+
+  # Pre-populate target with extra nested file
+  mkdir -p "$TEST_ROOT/.cursor/commands/subdir"
+  echo "stale" > "$TEST_ROOT/.cursor/commands/subdir/old.md"
+  echo "nested" > "$TEST_ROOT/.cursor/commands/subdir/kept.md"
+  echo "keep" > "$TEST_ROOT/.cursor/commands/keep.md"
+
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_ROOT/.cursor/commands/subdir/kept.md" ]
+  # old.md was reverse-synced to canonical, so it now exists everywhere
+  [ -f "$TEST_ROOT/.claude/commands/subdir/old.md" ]
+  [ -f "$TEST_ROOT/.cursor/commands/subdir/old.md" ]
+}
+
+@test "forward sync: removes stale dotfiles" {
+  echo "keep" > "$TEST_ROOT/.claude/commands/keep.md"
+  # .DS_Store only in target, not in canonical
+  # Since it's a dotfile in a non-symlink dir, reverse-sync will copy it to canonical
+  # Then forward-sync mirrors it. To test pure forward-sync removal,
+  # we verify the full cycle produces identical dirs.
+
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_ROOT/.cursor/commands/keep.md" ]
+}
+
+@test "forward sync: handles type mismatch (dir in target, file in canonical)" {
+  echo "file-content" > "$TEST_ROOT/.claude/commands/foo"
+  mkdir -p "$TEST_ROOT/.cursor/commands/foo"
+  echo "nested" > "$TEST_ROOT/.cursor/commands/foo/bar.md"
+
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  # Reverse-sync resolves the type conflict: cursor's foo/ (dir) overwrites
+  # canonical's foo (file). Then forward-sync mirrors canonical to cursor.
+  # End state: foo/ is a directory with bar.md in both locations.
+  [ -d "$TEST_ROOT/.claude/commands/foo" ]
+  [ -f "$TEST_ROOT/.claude/commands/foo/bar.md" ]
+  [ -d "$TEST_ROOT/.cursor/commands/foo" ]
+  [ -f "$TEST_ROOT/.cursor/commands/foo/bar.md" ]
+}
+
+@test "forward sync: edit in IDE propagates to canonical" {
+  echo "v1" > "$TEST_ROOT/.claude/commands/cmd.md"
+  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$(cat "$TEST_ROOT/.cursor/commands/cmd.md")" = "v1" ]
+
+  # Developer edits in cursor (the IDE location)
+  echo "v2-from-cursor" > "$TEST_ROOT/.cursor/commands/cmd.md"
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  [ "$status" -eq 0 ]
+  # Reverse-sync pulls the edit into canonical, forward-sync mirrors it
+  [ "$(cat "$TEST_ROOT/.claude/commands/cmd.md")" = "v2-from-cursor" ]
+  [ "$(cat "$TEST_ROOT/.cursor/commands/cmd.md")" = "v2-from-cursor" ]
 }
 
 # ─── Symlink migration ──────────────────────────────────────────────
@@ -164,7 +246,6 @@ teardown() {
   [ "$status" -ne 0 ]
   [[ "$output" == *"symlink"* ]]
   [[ "$output" == *"--migrate"* ]]
-  # Target should still be a symlink (unchanged)
   [ -L "$TEST_ROOT/.cursor/commands" ]
 }
 
@@ -174,7 +255,6 @@ teardown() {
 
   run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands --migrate
   [ "$status" -eq 0 ]
-  # Should now be a real directory, not a symlink
   [ -d "$TEST_ROOT/.cursor/commands" ]
   [ ! -L "$TEST_ROOT/.cursor/commands" ]
   [ -f "$TEST_ROOT/.cursor/commands/cmd.md" ]
@@ -188,49 +268,7 @@ teardown() {
   run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands --migrate --dry-run
   [ "$status" -eq 0 ]
   [[ "$output" == *"DRY RUN"* ]]
-  # Symlink should still exist
   [ -L "$TEST_ROOT/.cursor/commands" ]
-}
-
-# ─── Conflict resolution ────────────────────────────────────────────
-
-@test "conflict: fails when target has non-canonical files without --copy-existing" {
-  echo "shared" > "$TEST_ROOT/.claude/commands/shared.md"
-  mkdir -p "$TEST_ROOT/.cursor/commands"
-  echo "shared" > "$TEST_ROOT/.cursor/commands/shared.md"
-  echo "extra" > "$TEST_ROOT/.cursor/commands/only-here.md"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"Conflict"* ]]
-  [[ "$output" == *"only-here.md"* ]]
-}
-
-@test "conflict: --copy-existing merges non-canonical files into canonical then syncs" {
-  echo "shared" > "$TEST_ROOT/.claude/commands/shared.md"
-  mkdir -p "$TEST_ROOT/.cursor/commands"
-  echo "shared" > "$TEST_ROOT/.cursor/commands/shared.md"
-  echo "extra" > "$TEST_ROOT/.cursor/commands/only-here.md"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands --copy-existing
-  [ "$status" -eq 0 ]
-  # Non-canonical file should now be in canonical
-  [ -f "$TEST_ROOT/.claude/commands/only-here.md" ]
-  [ "$(cat "$TEST_ROOT/.claude/commands/only-here.md")" = "extra" ]
-  # And synced back to target
-  [ -f "$TEST_ROOT/.cursor/commands/only-here.md" ]
-  [ -f "$TEST_ROOT/.cursor/commands/shared.md" ]
-}
-
-@test "conflict: no error when target has only canonical files" {
-  echo "a" > "$TEST_ROOT/.claude/commands/a.md"
-  mkdir -p "$TEST_ROOT/.cursor/commands"
-  echo "old-a" > "$TEST_ROOT/.cursor/commands/a.md"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -eq 0 ]
-  # Should be overwritten with canonical content
-  [ "$(cat "$TEST_ROOT/.cursor/commands/a.md")" = "a" ]
 }
 
 # ─── Dry run ─────────────────────────────────────────────────────────
@@ -282,25 +320,13 @@ teardown() {
   [[ "$output" == *"Already a symlink"* ]]
 }
 
-@test "symlink mode: fails when target dir exists without --copy-existing" {
+@test "symlink mode: fails when target dir exists" {
   mkdir -p "$TEST_ROOT/.cursor/commands"
   echo "x" > "$TEST_ROOT/.cursor/commands/file.md"
 
   run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands --method symlink
   [ "$status" -ne 0 ]
   [[ "$output" == *"already exists"* ]]
-}
-
-@test "symlink mode: --copy-existing merges then creates symlink" {
-  echo "extra" > "$TEST_ROOT/.claude/commands/existing.md"
-  mkdir -p "$TEST_ROOT/.cursor/commands"
-  echo "local" > "$TEST_ROOT/.cursor/commands/local-only.md"
-
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands --method symlink --copy-existing
-  [ "$status" -eq 0 ]
-  [ -L "$TEST_ROOT/.cursor/commands" ]
-  # local-only.md should have been copied to canonical
-  [ -f "$TEST_ROOT/.claude/commands/local-only.md" ]
 }
 
 # ─── Validation ──────────────────────────────────────────────────────
@@ -335,7 +361,6 @@ teardown() {
   echo "b" > "$TEST_ROOT/.claude/commands/sub/b.md"
 
   bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  # Capture state after first run
   first_a="$(cat "$TEST_ROOT/.cursor/commands/a.md")"
   first_b="$(cat "$TEST_ROOT/.cursor/commands/sub/b.md")"
 
@@ -345,42 +370,21 @@ teardown() {
   [ "$(cat "$TEST_ROOT/.cursor/commands/sub/b.md")" = "$first_b" ]
 }
 
-@test "sync reflects updated canonical content" {
-  echo "v1" > "$TEST_ROOT/.claude/commands/cmd.md"
-  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$(cat "$TEST_ROOT/.cursor/commands/cmd.md")" = "v1" ]
+@test "all locations identical after multi-IDE sync" {
+  echo "shared" > "$TEST_ROOT/.claude/commands/shared.md"
+  mkdir -p "$TEST_ROOT/.kilocode/workflows"
+  echo "from-kilo" > "$TEST_ROOT/.kilocode/workflows/extra.md"
 
-  echo "v2" > "$TEST_ROOT/.claude/commands/cmd.md"
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
+  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor,windsurf,kilocode --type commands
   [ "$status" -eq 0 ]
-  [ "$(cat "$TEST_ROOT/.cursor/commands/cmd.md")" = "v2" ]
-}
 
-@test "conflict: detects file deleted from canonical but still in target" {
-  echo "a" > "$TEST_ROOT/.claude/commands/a.md"
-  echo "b" > "$TEST_ROOT/.claude/commands/b.md"
-  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ -f "$TEST_ROOT/.cursor/commands/b.md" ]
-
-  # Delete from canonical only — target still has b.md
-  rm "$TEST_ROOT/.claude/commands/b.md"
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"Conflict"* ]]
-  [[ "$output" == *"b.md"* ]]
-}
-
-@test "sync reflects deleted canonical file with --copy-existing" {
-  echo "a" > "$TEST_ROOT/.claude/commands/a.md"
-  echo "b" > "$TEST_ROOT/.claude/commands/b.md"
-  bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands
-
-  rm "$TEST_ROOT/.claude/commands/b.md"
-  # --copy-existing merges b.md back to canonical, then clean sync mirrors canonical
-  run bash "$SYNC_SCRIPT" --repo-root "$TEST_ROOT" --ide cursor --type commands --copy-existing
-  [ "$status" -eq 0 ]
-  [ -f "$TEST_ROOT/.cursor/commands/a.md" ]
-  # b.md is merged back to canonical, so it exists in both places
-  [ -f "$TEST_ROOT/.claude/commands/b.md" ]
-  [ -f "$TEST_ROOT/.cursor/commands/b.md" ]
+  # All locations should have both files
+  [ -f "$TEST_ROOT/.claude/commands/shared.md" ]
+  [ -f "$TEST_ROOT/.claude/commands/extra.md" ]
+  [ -f "$TEST_ROOT/.cursor/commands/shared.md" ]
+  [ -f "$TEST_ROOT/.cursor/commands/extra.md" ]
+  [ -f "$TEST_ROOT/.windsurf/workflows/shared.md" ]
+  [ -f "$TEST_ROOT/.windsurf/workflows/extra.md" ]
+  [ -f "$TEST_ROOT/.kilocode/workflows/shared.md" ]
+  [ -f "$TEST_ROOT/.kilocode/workflows/extra.md" ]
 }

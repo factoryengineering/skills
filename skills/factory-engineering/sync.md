@@ -1,31 +1,38 @@
 # IDE Sync
 
-Canonical **commands and workflows** live in **`.claude/commands/`**. Canonical **skills** live in **`.claude/skills/`**. Each IDE looks in different folders. The sync script copies files from canonical folders to IDE-specific locations so one set of files works everywhere.
+Canonical **commands and workflows** live in **`.claude/commands/`**. Canonical **skills** live in **`.claude/skills/`**. Each IDE looks in different folders. The sync script keeps all locations identical using a two-phase approach:
+
+1. **Reverse-sync** — pull new/changed files from all IDE locations back into canonical (additive, no deletions).
+2. **Forward-sync** — mirror canonical out to all IDE locations (deletes stale files in targets).
+
+After both phases every location is identical and `.claude/` remains the single source of truth. A developer who edited in `.kilocode/skills/` has their changes preserved in `.claude/skills/` and propagated everywhere else.
 
 **Supported IDEs:** Cursor, Windsurf, Kilo Code, Antigravity. Cursor and GitHub Copilot read `.claude/skills/` directly—no skills sync needed. For Copilot commands, use the separate sync workflow (see [sync-copilot-prompts.md](sync-copilot-prompts.md)).
 
 **Why copy instead of symlink?** Symlinks have known issues: Cursor directory symlinks may not work ([documented bug](https://github.com/factoryengineering/skills/issues/1)), Windows requires Developer Mode for symlinks (often restricted in corporate environments), file-watching breaks in some IDEs with symlinked directories, and Git handles symlinks inconsistently across platforms. Copying avoids all of these. Symlinks remain available as a fallback via `--method=symlink`.
 
+Uses `rsync` when available; falls back to `cp` otherwise.
+
 ---
 
 ## Workflow for the agent
 
-1. **Ensure canonical folders exist.** From the repository root: `mkdir -p .claude/commands .claude/skills` if needed.
+1. **Ensure canonical folders exist.** From the repository root: `mkdir -p .claude/commands .claude/skills` if needed. The script creates them automatically.
 
 2. **Determine which IDEs to support.**
    - If the user specified IDEs (e.g. "just Cursor"), use that list.
    - If not, **detect:** run the script with `--detect`. It checks for `.cursor`, `.windsurf`, `.kilocode`, `.agent` in the repo root.
    - If you detected IDEs, **confirm with the user** before proceeding; list them and ask which should receive synced files.
 
-3. **Check for existing targets.** For each selected IDE:
-   - **Existing symlink:** If a target is a symlink (from a previous setup), offer to convert it with `--migrate`.
-   - **Non-canonical files:** If a target directory has files not present in the canonical folder, inform the user. Offer to merge them into canonical with `--copy-existing`.
+3. **Check for existing symlinks.** If a target is a symlink (from a previous setup), offer to convert it with `--migrate`.
 
 4. **Sync files.** From repo root: Bash `bash path/to/skill/scripts/sync-ide.sh` or PowerShell `path\to\skill\scripts\Sync-Ide.ps1`. After installation the skill lives at `.claude/skills/factory-engineering/`. Pass IDEs (e.g. `--ide cursor,windsurf` or `-Ide "cursor,windsurf"`). Use `--type all` (default) for both commands and skills; `--type commands` or `--type skills` for one. Use `--dry-run` / `-DryRun` to preview.
 
+   The script automatically gathers any IDE-local changes into canonical (reverse-sync) and then mirrors canonical back out (forward-sync). No manual merge step needed.
+
 5. **Set up ongoing sync** (recommend one):
    - **Pre-commit hook** (recommended): Install `scripts/pre-commit-sync.sh` as `.git/hooks/pre-commit` to auto-sync before each commit.
-   - **Manual sync:** Re-run the script after changing canonical files.
+   - **Manual sync:** Re-run the script after changing files in any location.
 
 6. **Commit.** Recommend committing synced files and any new files under `.claude/commands` or `.claude/skills`.
 
@@ -40,10 +47,9 @@ Run from the **repository root** (or pass `--repo-root` / `-RepoRoot`).
 | Goal | Command |
 |------|---------|
 | Detect installed IDEs | `bash path/to/skill/scripts/sync-ide.sh --detect` |
-| Sync all (copy) | `bash path/to/skill/scripts/sync-ide.sh --ide cursor,windsurf` |
+| Sync all | `bash path/to/skill/scripts/sync-ide.sh --ide cursor,windsurf` |
 | Sync commands only | `bash path/to/skill/scripts/sync-ide.sh --type commands --ide cursor` |
 | Preview changes | `bash path/to/skill/scripts/sync-ide.sh --dry-run --ide cursor,windsurf` |
-| Merge non-canonical files | Add `--copy-existing` |
 | Migrate from symlinks | Add `--migrate` |
 | Use symlinks (legacy) | Add `--method=symlink` |
 | Non-repo root | `--repo-root /path/to/repo` |
@@ -53,10 +59,9 @@ Run from the **repository root** (or pass `--repo-root` / `-RepoRoot`).
 | Goal | Command |
 |------|---------|
 | Detect | `path\to\skill\scripts\Sync-Ide.ps1 -Detect` |
-| Sync all (copy) | `path\to\skill\scripts\Sync-Ide.ps1 -Ide "cursor,windsurf"` |
+| Sync all | `path\to\skill\scripts\Sync-Ide.ps1 -Ide "cursor,windsurf"` |
 | Sync commands only | `path\to\skill\scripts\Sync-Ide.ps1 -Type commands -Ide cursor` |
 | Preview changes | `path\to\skill\scripts\Sync-Ide.ps1 -DryRun -Ide "cursor,windsurf"` |
-| Merge non-canonical files | `-CopyExisting` |
 | Migrate from symlinks | `-Migrate` |
 | Use symlinks (legacy) | `-Method symlink` |
 | Require symlinks (no junction) | `-NoJunctionFallback` (only with `-Method symlink`) |
@@ -79,12 +84,30 @@ Or append the body of the script to an existing pre-commit hook.
 
 ---
 
+## How it works
+
+```
+Phase 1: Reverse-sync (additive — no deletions)
+  .windsurf/skills/  ──┐
+  .kilocode/skills/  ──┼──▶  .claude/skills/
+  .agent/skills/     ──┘
+
+Phase 2: Forward-sync (mirror — deletes stale files)
+  .claude/skills/  ──┬──▶  .windsurf/skills/
+                     ├──▶  .kilocode/skills/
+                     └──▶  .agent/skills/
+```
+
+**Edge case:** If two developers edit the same file in different IDE locations, the last write wins during reverse-sync (based on modification time with `rsync`, or copy order with `cp`). This is rare—most teams won't edit the same skill in different IDE folders simultaneously. If it happens, Git's merge conflict handling catches it at push time.
+
+---
+
 ## Sync mapping
 
 **Commands and workflows** (canonical: `.claude/commands/`):
 
-| IDE | Target (copy destination) | Source |
-|-----|---------------------------|--------|
+| IDE | Synced location | Canonical |
+|-----|-----------------|-----------|
 | Cursor | `.cursor/commands/` | `.claude/commands/` |
 | Windsurf | `.windsurf/workflows/` | `.claude/commands/` |
 | Kilo Code | `.kilocode/workflows/` | `.claude/commands/` |
@@ -92,8 +115,8 @@ Or append the body of the script to an existing pre-commit hook.
 
 **Skills** (canonical: `.claude/skills/`). Cursor and GitHub Copilot read this path directly—no sync needed.
 
-| IDE | Target (copy destination) | Source |
-|-----|---------------------------|--------|
+| IDE | Synced location | Canonical |
+|-----|-----------------|-----------|
 | Windsurf | `.windsurf/skills/` | `.claude/skills/` |
 | Kilo Code | `.kilocode/skills/` | `.claude/skills/` |
 | Antigravity | `.agent/skills/` | `.claude/skills/` |
@@ -102,22 +125,12 @@ Antigravity requires `.agent` to exist; the scripts create it when needed.
 
 ---
 
-## Conflict resolution
-
-When an IDE-specific folder contains files that don't exist in the canonical folder:
-
-1. The script warns about each non-canonical file.
-2. Use `--copy-existing` / `-CopyExisting` to merge them into the canonical folder before syncing.
-3. Files merged into canonical become the source of truth for all IDEs.
-
----
-
 ## Migration from symlinks
 
 If your project currently uses symlinks from a previous setup:
 
 1. Run with `--migrate` / `-Migrate` plus `--ide <your-ides>` to convert symlinks to copies.
-2. The script removes the symlink and copies canonical folder contents to the target directory.
+2. The script removes the symlink, then runs the two-phase sync to populate the target directory.
 3. Use `--dry-run` / `-DryRun` with `--migrate` to preview before making changes.
 
 ---

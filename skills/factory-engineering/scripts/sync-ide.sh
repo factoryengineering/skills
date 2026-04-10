@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
-# Sync canonical .claude/ folders to IDE-specific locations via file copying.
-# Default method: copy (recommended). Symlinks available via --method=symlink.
-# Run from repository root. See sync.md for full workflow.
+# Two-phase sync for canonical .claude/ folders and IDE-specific locations.
+#
+# Phase 1 — Reverse-sync (additive): pull new/changed files from IDE
+#           locations back into canonical folders. No deletions.
+# Phase 2 — Forward-sync (mirror): push canonical folders out to IDE
+#           locations, deleting stale files in the targets.
+#
+# After both phases every location is identical and .claude/ is the
+# single source of truth.
+#
+# Uses rsync when available; falls back to cp otherwise.
 #
 # Usage:
 #   sync-ide.sh --detect
@@ -15,25 +23,28 @@ set -e
 REPO_ROOT=
 DETECT=
 IDES=
-COPY_EXISTING=
 MIGRATE=
 DRY_RUN=
 METHOD="copy"
 TYPE="all"
 
-# Commands/workflows: canonical .claude/commands -> IDE-specific paths
-cursor_commands=".cursor/commands"
-windsurf_commands=".windsurf/workflows"
-kilocode_commands=".kilocode/workflows"
-antigravity_commands=".agent/workflows"
+# Canonical locations
 canonical_commands=".claude/commands"
-
-# Skills: canonical .claude/skills -> IDE-specific paths
-# Cursor reads .claude/skills directly; no sync needed for cursor skills
-windsurf_skills=".windsurf/skills"
-kilocode_skills=".kilocode/skills"
-antigravity_skills=".agent/skills"
 canonical_skills=".claude/skills"
+
+# IDE-specific target paths
+declare -A commands_map=(
+  [cursor]=".cursor/commands"
+  [windsurf]=".windsurf/workflows"
+  [kilocode]=".kilocode/workflows"
+  [antigravity]=".agent/workflows"
+)
+# Cursor reads .claude/skills directly; no sync needed for cursor skills
+declare -A skills_map=(
+  [windsurf]=".windsurf/skills"
+  [kilocode]=".kilocode/skills"
+  [antigravity]=".agent/skills"
+)
 
 usage() {
   cat <<EOF
@@ -44,8 +55,7 @@ Options:
   --ide IDE[,IDE...]  Target IDEs: cursor, windsurf, kilocode, antigravity.
   --type TYPE         One of: commands, skills, all (default: all).
   --method METHOD     Sync method: copy (default) or symlink.
-  --copy-existing     Merge non-canonical target files into canonical folder before syncing.
-  --migrate           Convert existing symlinks to file copies.
+  --migrate           Convert existing symlinks to directory copies.
   --dry-run           Preview changes without modifying files.
   --repo-root PATH    Repository root (default: current directory).
 EOF
@@ -54,16 +64,15 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --repo-root)     REPO_ROOT="$2"; shift 2 ;;
-    --type)          TYPE="$2"; shift 2 ;;
-    --method)        METHOD="$2"; shift 2 ;;
-    --detect)        DETECT=1; shift ;;
-    --ide)           IDES="$2"; shift 2 ;;
-    --copy-existing) COPY_EXISTING=1; shift ;;
-    --migrate)       MIGRATE=1; shift ;;
-    --dry-run)       DRY_RUN=1; shift ;;
-    -h|--help)       usage ;;
-    *)               echo "Unknown option: $1" >&2; usage ;;
+    --repo-root) REPO_ROOT="$2"; shift 2 ;;
+    --type)      TYPE="$2"; shift 2 ;;
+    --method)    METHOD="$2"; shift 2 ;;
+    --detect)    DETECT=1; shift ;;
+    --ide)       IDES="$2"; shift 2 ;;
+    --migrate)   MIGRATE=1; shift ;;
+    --dry-run)   DRY_RUN=1; shift ;;
+    -h|--help)   usage ;;
+    *)           echo "Unknown option: $1" >&2; usage ;;
   esac
 done
 
@@ -71,25 +80,23 @@ case "$TYPE" in
   commands|skills|all) ;;
   *) echo "Error: --type must be commands, skills, or all." >&2; usage ;;
 esac
-
 case "$METHOD" in
   copy|symlink) ;;
   *) echo "Error: --method must be copy or symlink." >&2; usage ;;
 esac
 
-if [[ -z "$REPO_ROOT" ]]; then
-  REPO_ROOT="$(pwd)"
-fi
+if [[ -z "$REPO_ROOT" ]]; then REPO_ROOT="$(pwd)"; fi
 REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
 cd "$REPO_ROOT"
 
-# --- Detect ---
+# ─── Detect ───────────────────────────────────────────────────────────
+
 if [[ -n "$DETECT" ]]; then
   detected=()
-  [[ -d ".cursor" ]] && detected+=(cursor)
+  [[ -d ".cursor" ]]   && detected+=(cursor)
   [[ -d ".windsurf" ]] && detected+=(windsurf)
   [[ -d ".kilocode" ]] && detected+=(kilocode)
-  [[ -d ".agent" ]] && detected+=(antigravity)
+  [[ -d ".agent" ]]    && detected+=(antigravity)
   if [[ ${#detected[@]} -eq 0 ]]; then
     echo "No IDE directories (.cursor, .windsurf, .kilocode, .agent) found in $REPO_ROOT"
   else
@@ -103,99 +110,91 @@ if [[ -z "$IDES" ]]; then
   usage
 fi
 
-# Normalize IDEs to list
+# Normalize IDE list
 IFS=',' read -ra IDE_LIST <<< "$IDES"
-for ide in "${IDE_LIST[@]}"; do
-  ide="$(echo "$ide" | tr '[:upper:]' '[:lower:]' | xargs)"
-  [[ -z "$ide" ]] && continue
-  case "$ide" in
-    cursor|windsurf|kilocode|antigravity) ;;
-    *) echo "Error: unknown IDE '$ide'. Use cursor, windsurf, kilocode, antigravity." >&2; exit 1 ;;
+for i in "${!IDE_LIST[@]}"; do
+  IDE_LIST[$i]="$(echo "${IDE_LIST[$i]}" | tr '[:upper:]' '[:lower:]' | xargs)"
+  case "${IDE_LIST[$i]}" in
+    cursor|windsurf|kilocode|antigravity|"") ;;
+    *) echo "Error: unknown IDE '${IDE_LIST[$i]}'." >&2; exit 1 ;;
   esac
 done
 
-# Warn about symlink limitations
-if [[ "$METHOD" == "symlink" ]]; then
-  echo "WARNING: Symlink mode selected. Known limitations:"
-  echo "  - Cursor has a documented bug where directory symlinks may not work"
-  echo "  - Windows requires Developer Mode or elevated privileges for symlinks"
-  echo "  - File-watching behavior varies across IDEs with symlinked directories"
-  echo "  - Git handling of symlinks is inconsistent across platforms"
-  echo "Consider using the default copy method instead (omit --method or use --method=copy)."
-  echo ""
-fi
+# ─── Sync helpers ─────────────────────────────────────────────────────
 
-# --- Copy-based sync ---
-copy_sync() {
-  local canonical_dir="$1"
-  local target_dir="$2"
-  local parent_dir="${target_dir%/*}"
+HAS_RSYNC=
+command -v rsync &>/dev/null && HAS_RSYNC=1
 
-  # Handle existing symlink at target (migration)
-  if [[ -L "$target_dir" ]]; then
-    if [[ -n "$MIGRATE" ]]; then
-      if [[ -n "$DRY_RUN" ]]; then
-        echo "[DRY RUN] Would remove symlink $target_dir and create directory copy"
-        return 0
-      fi
-      echo "Migrating: removing symlink $target_dir ..."
-      rm "$target_dir"
-    else
-      echo "Warning: $target_dir is a symlink. Use --migrate to convert to a copy." >&2
-      return 1
-    fi
-  fi
-
-  # Handle non-canonical files in existing target
-  if [[ -d "$target_dir" && -d "$canonical_dir" ]]; then
-    local has_conflicts=0
-    for f in "$target_dir"/*; do
-      [[ -e "$f" ]] || continue
-      local base
-      base=$(basename "$f")
-      if [[ ! -e "$canonical_dir/$base" ]]; then
-        has_conflicts=1
-        if [[ -n "$COPY_EXISTING" ]]; then
-          if [[ -n "$DRY_RUN" ]]; then
-            echo "[DRY RUN] Would merge $target_dir/$base -> $canonical_dir/$base"
-          else
-            cp -R "$target_dir/$base" "$canonical_dir/$base"
-            echo "Merged non-canonical file: $base -> $canonical_dir/"
-          fi
-        else
-          echo "Conflict: $target_dir/$base is not in $canonical_dir"
-        fi
-      fi
-    done
-    if [[ $has_conflicts -eq 1 && -z "$COPY_EXISTING" ]]; then
-      echo "  Use --copy-existing to merge these files into $canonical_dir before syncing." >&2
-      return 2
-    fi
-  fi
-
-  if [[ ! -d "$canonical_dir" ]]; then
+# Remove symlink at path, replacing with nothing (caller will create dir).
+remove_symlink_if_needed() {
+  local path="$1"
+  [[ -L "$path" ]] || return 0
+  if [[ -n "$MIGRATE" ]]; then
     if [[ -n "$DRY_RUN" ]]; then
-      echo "[DRY RUN] Would create $canonical_dir (empty)"
+      echo "[DRY RUN] Would remove symlink $path"
     else
-      mkdir -p "$canonical_dir"
+      rm "$path"
+      echo "Migrated: removed symlink $path"
     fi
-    echo "Canonical folder $canonical_dir created (empty). Add files and re-run to sync."
-    return 0
+  else
+    echo "Error: $path is a symlink. Use --migrate to convert to a copy." >&2
+    return 1
   fi
-
-  if [[ -n "$DRY_RUN" ]]; then
-    echo "[DRY RUN] Would sync $canonical_dir -> $target_dir"
-    return 0
-  fi
-
-  # Sync: mirror canonical to target (clean copy)
-  mkdir -p "$parent_dir"
-  rm -rf "$target_dir"
-  cp -R "$canonical_dir" "$target_dir"
-  echo "Synced: $canonical_dir -> $target_dir"
 }
 
-# --- Symlink-based sync (legacy fallback) ---
+# Phase 1: Reverse-sync — additive copy from $src/ into $dest/ (no deletes).
+reverse_sync_dir() {
+  local src="$1" dest="$2"
+  [[ -d "$src" ]] || return 0
+  [[ -L "$src" ]] && return 0   # skip symlinks (they point at canonical already)
+  mkdir -p "$dest"
+  if [[ -n "$DRY_RUN" ]]; then
+    echo "[DRY RUN] Would reverse-sync $src -> $dest"
+    return 0
+  fi
+  if [[ -n "$HAS_RSYNC" ]]; then
+    rsync -a "$src/" "$dest/"
+  else
+    # cp fallback: walk src entries and copy individually to handle type
+    # mismatches (e.g. file in dest where src has a directory, or vice versa).
+    while IFS= read -r -d '' item; do
+      local rel="${item#"$src"/}"
+      local dest_item="$dest/$rel"
+      if [[ -d "$item" ]]; then
+        [[ -e "$dest_item" && ! -d "$dest_item" ]] && rm -f "$dest_item"
+        mkdir -p "$dest_item"
+      else
+        [[ -e "$dest_item" && -d "$dest_item" ]] && rm -rf "$dest_item"
+        mkdir -p "$(dirname "$dest_item")"
+        cp "$item" "$dest_item"
+      fi
+    done < <(find "$src" -mindepth 1 -print0)
+  fi
+  echo "Reverse-synced: $src -> $dest"
+}
+
+# Phase 2: Forward-sync — mirror $src/ to $dest/ (deletes stale files).
+forward_sync_dir() {
+  local src="$1" dest="$2"
+  [[ -d "$src" ]] || return 0
+  if [[ -n "$DRY_RUN" ]]; then
+    echo "[DRY RUN] Would forward-sync $src -> $dest"
+    return 0
+  fi
+  local parent="${dest%/*}"
+  mkdir -p "$parent"
+  if [[ -n "$HAS_RSYNC" ]]; then
+    mkdir -p "$dest"
+    rsync -a --delete "$src/" "$dest/"
+  else
+    rm -rf "$dest"
+    cp -R "$src" "$dest"
+  fi
+  echo "Forward-synced: $src -> $dest"
+}
+
+# ─── Symlink fallback (legacy) ────────────────────────────────────────
+
 create_symlink() {
   local target_path="$1"
   local canonical_dir="$2"
@@ -213,19 +212,8 @@ create_symlink() {
   fi
 
   if [[ -d "$target_path" ]]; then
-    if [[ -n "$COPY_EXISTING" ]]; then
-      if [[ -n "$DRY_RUN" ]]; then
-        echo "[DRY RUN] Would copy $target_path into $canonical_dir and replace with symlink"
-        return 0
-      fi
-      echo "Copying existing $target_path into $canonical_dir ..."
-      mkdir -p "$canonical_dir"
-      cp -Rn "$target_path"/. "$canonical_dir/" 2>/dev/null || true
-      rm -rf "$target_path"
-    else
-      echo "Target $target_path already exists. Use --copy-existing to merge and replace." >&2
-      return 2
-    fi
+    echo "Error: $target_path already exists as a directory. Remove it or use copy mode." >&2
+    return 1
   fi
 
   if [[ -n "$DRY_RUN" ]]; then
@@ -239,49 +227,72 @@ create_symlink() {
   echo "Created symlink: $target_path -> ../$canonical_dir"
 }
 
-# --- Dispatch ---
-sync_target() {
-  local canonical_dir="$1"
-  local target_dir="$2"
-  if [[ "$METHOD" == "copy" ]]; then
-    copy_sync "$canonical_dir" "$target_dir"
-  else
-    create_symlink "$target_dir" "$canonical_dir"
-  fi
-}
+# ─── Main sync ────────────────────────────────────────────────────────
 
-run_for_ide() {
-  local ide="$1"
-  local ec=0
+if [[ "$METHOD" == "symlink" ]]; then
+  echo "WARNING: Symlink mode selected. Known limitations:"
+  echo "  - Cursor has a documented bug where directory symlinks may not work"
+  echo "  - Windows requires Developer Mode or elevated privileges for symlinks"
+  echo "  - File-watching behavior varies across IDEs with symlinked directories"
+  echo "  - Git handling of symlinks is inconsistent across platforms"
+  echo "Consider using the default copy method instead."
+  echo ""
 
-  if [[ "$TYPE" == "commands" || "$TYPE" == "all" ]]; then
-    case "$ide" in
-      cursor)      sync_target "$canonical_commands" "$cursor_commands" || ec=$? ;;
-      windsurf)    sync_target "$canonical_commands" "$windsurf_commands" || ec=$? ;;
-      kilocode)    sync_target "$canonical_commands" "$kilocode_commands" || ec=$? ;;
-      antigravity) sync_target "$canonical_commands" "$antigravity_commands" || ec=$? ;;
-    esac
-    [[ $ec -eq 2 ]] && return 2
-  fi
+  for ide in "${IDE_LIST[@]}"; do
+    [[ -z "$ide" ]] && continue
+    if [[ "$TYPE" == "commands" || "$TYPE" == "all" ]]; then
+      [[ -n "${commands_map[$ide]}" ]] && create_symlink "${commands_map[$ide]}" "$canonical_commands"
+    fi
+    if [[ "$TYPE" == "skills" || "$TYPE" == "all" ]]; then
+      [[ -n "${skills_map[$ide]}" ]] && create_symlink "${skills_map[$ide]}" "$canonical_skills"
+    fi
+  done
+  exit $?
+fi
 
-  if [[ "$TYPE" == "skills" || "$TYPE" == "all" ]]; then
-    case "$ide" in
-      cursor)      ;;  # Cursor reads .claude/skills directly; no sync needed
-      windsurf)    sync_target "$canonical_skills" "$windsurf_skills" || ec=$? ;;
-      kilocode)    sync_target "$canonical_skills" "$kilocode_skills" || ec=$? ;;
-      antigravity) sync_target "$canonical_skills" "$antigravity_skills" || ec=$? ;;
-    esac
-    [[ $ec -eq 2 ]] && return 2
-  fi
+# ── Copy mode: two-phase sync ────────────────────────────────────────
 
-  return $ec
-}
-
-exit_code=0
+# Collect target dirs for selected IDEs
+commands_targets=()
+skills_targets=()
 for ide in "${IDE_LIST[@]}"; do
-  ide="$(echo "$ide" | tr '[:upper:]' '[:lower:]' | xargs)"
   [[ -z "$ide" ]] && continue
-  run_for_ide "$ide" || exit_code=$?
-  [[ $exit_code -eq 2 ]] && break
+  if [[ "$TYPE" == "commands" || "$TYPE" == "all" ]]; then
+    [[ -n "${commands_map[$ide]}" ]] && commands_targets+=("${commands_map[$ide]}")
+  fi
+  if [[ "$TYPE" == "skills" || "$TYPE" == "all" ]]; then
+    [[ -n "${skills_map[$ide]}" ]] && skills_targets+=("${skills_map[$ide]}")
+  fi
 done
-exit $exit_code
+
+# Handle symlink migration on all targets before syncing
+for t in "${commands_targets[@]}" "${skills_targets[@]}"; do
+  remove_symlink_if_needed "$t" || exit 1
+done
+
+# Ensure canonical dirs exist
+mkdir -p "$canonical_commands" "$canonical_skills"
+
+# Phase 1: Reverse-sync — gather changes from IDE locations into canonical
+if [[ ${#commands_targets[@]} -gt 0 ]]; then
+  for t in "${commands_targets[@]}"; do
+    reverse_sync_dir "$t" "$canonical_commands"
+  done
+fi
+if [[ ${#skills_targets[@]} -gt 0 ]]; then
+  for t in "${skills_targets[@]}"; do
+    reverse_sync_dir "$t" "$canonical_skills"
+  done
+fi
+
+# Phase 2: Forward-sync — mirror canonical to all IDE locations
+if [[ ${#commands_targets[@]} -gt 0 ]]; then
+  for t in "${commands_targets[@]}"; do
+    forward_sync_dir "$canonical_commands" "$t"
+  done
+fi
+if [[ ${#skills_targets[@]} -gt 0 ]]; then
+  for t in "${skills_targets[@]}"; do
+    forward_sync_dir "$canonical_skills" "$t"
+  done
+fi

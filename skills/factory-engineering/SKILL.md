@@ -13,7 +13,7 @@ One skill for configuring commands, workflows, and skills across IDEs. Canonical
 
 ## When to use
 
-- **Sync (copy — recommended):** User wants slash commands or skills to work in Cursor, Windsurf, Kilo Code, or Antigravity from a single canonical folder. The sync script copies files from `.claude/commands` and `.claude/skills` to IDE-specific locations. Cursor and GitHub Copilot read `.claude/skills/` directly—no skills copy for them; the script creates skill copies only for Windsurf, Kilo Code, and Antigravity.
+- **Sync (copy — recommended):** User wants slash commands or skills to work in Cursor, Windsurf, Kilo Code, or Antigravity from a single canonical folder. The sync script uses two phases: reverse-sync gathers changes from IDE locations into canonical, then forward-sync mirrors canonical to all targets. Edits made in any IDE folder are preserved. Cursor and GitHub Copilot read `.claude/skills/` directly—no skills sync for them; the script syncs skills only for Windsurf, Kilo Code, and Antigravity.
 - **Sync (symlink — legacy fallback):** Same as above but using symlinks instead of copies. Use only when explicitly requested. Known issues: Cursor symlink bug, Windows Developer Mode requirement, inconsistent file-watching, cross-platform Git problems.
 - **Sync Copilot prompts:** User uses GitHub Copilot (VS Code) and wants `/command-name` in Chat. Copilot uses `.github/prompts/*.prompt.md`, not `.claude/commands/*.md`. Sync converts commands to prompt files.
 
@@ -23,9 +23,9 @@ For Copilot commands, use sync (symlinks do not apply).
 
 ## Sync (copy)
 
-Primary workflow, script options, conflict resolution, and mapping tables: **[sync.md](sync.md)**.
+Primary workflow, two-phase sync details, and mapping tables: **[sync.md](sync.md)**.
 
-Run scripts from the **repository root**. Bash: `bash path/to/skill/scripts/sync-ide.sh`. PowerShell: `path/to/skill/scripts/Sync-Ide.ps1`. After installation the skill lives at `.claude/skills/factory-engineering/`. Use `--detect` / `-Detect` to list IDEs before syncing; use `--copy-existing` / `-CopyExisting` to merge existing target folders into the canonical folder first. Use `--dry-run` / `-DryRun` to preview changes. Use `--migrate` / `-Migrate` to convert existing symlinks to copies.
+Run scripts from the **repository root**. Bash: `bash path/to/skill/scripts/sync-ide.sh`. PowerShell: `path/to/skill/scripts/Sync-Ide.ps1`. After installation the skill lives at `.claude/skills/factory-engineering/`. Use `--detect` / `-Detect` to list IDEs before syncing. Use `--dry-run` / `-DryRun` to preview changes. Use `--migrate` / `-Migrate` to convert existing symlinks to copies. Changes in any IDE folder are automatically gathered into canonical before syncing out.
 
 **Pre-commit hook:** Install `path/to/skill/scripts/pre-commit-sync.sh` as `.git/hooks/pre-commit` to auto-sync before each commit.
 

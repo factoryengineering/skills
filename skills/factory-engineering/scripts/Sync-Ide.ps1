@@ -1,6 +1,12 @@
-# Sync canonical .claude/ folders to IDE-specific locations.
-# Default method: copy (recommended). Symlinks available via -Method symlink.
-# Run from repository root. See sync.md for full workflow.
+# Two-phase sync for canonical .claude/ folders and IDE-specific locations.
+#
+# Phase 1 — Reverse-sync (additive): pull new/changed files from IDE
+#           locations back into canonical folders. No deletions.
+# Phase 2 — Forward-sync (mirror): push canonical folders out to IDE
+#           locations, deleting stale files in the targets.
+#
+# After both phases every location is identical and .claude/ is the
+# single source of truth.
 #
 # Usage:
 #   .\Sync-Ide.ps1 -Detect
@@ -23,8 +29,6 @@ param(
     [Parameter(Mandatory = $false)]
     [string[]]$Ide,
     [Parameter(Mandatory = $false)]
-    [switch]$CopyExisting,
-    [Parameter(Mandatory = $false)]
     [switch]$Migrate,
     [Parameter(Mandatory = $false)]
     [switch]$DryRun,
@@ -36,14 +40,14 @@ $ErrorActionPreference = 'Stop'
 
 $canonicalCommands = '.claude/commands'
 $canonicalSkills = '.claude/skills'
-$targetsCommands = @{
+$commandsMap = @{
     cursor      = '.cursor/commands'
     windsurf    = '.windsurf/workflows'
     kilocode    = '.kilocode/workflows'
     antigravity = '.agent/workflows'
 }
 # Cursor reads .claude/skills directly; no sync needed for cursor skills
-$targetsSkills = @{
+$skillsMap = @{
     windsurf    = '.windsurf/skills'
     kilocode    = '.kilocode/skills'
     antigravity = '.agent/skills'
@@ -59,96 +63,64 @@ function Get-DetectedIdes {
     return $detected
 }
 
-function Copy-SyncTarget {
-    param(
-        [string]$root,
-        [string]$canonicalDir,
-        [string]$targetDir,
-        [bool]$copyExisting,
-        [bool]$migrate,
-        [bool]$dryRun
-    )
-    $canonicalFull = Join-Path $root $canonicalDir
-    $targetFull = Join-Path $root $targetDir
-    $parentDir = Split-Path -Parent $targetFull
-
-    # Handle existing symlink (migration)
-    if (Test-Path -LiteralPath $targetFull) {
-        $item = Get-Item -LiteralPath $targetFull -Force
-        $isLink = [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)
-        if ($isLink) {
-            if ($migrate) {
-                if ($dryRun) {
-                    Write-Host "[DRY RUN] Would remove symlink $targetFull and create directory copy"
-                    return 0
-                }
-                Write-Host "Migrating: removing symlink $targetFull ..."
-                Remove-Item -LiteralPath $targetFull -Force
-            } else {
-                throw "$targetFull is a symlink. Use -Migrate to convert to a copy."
-            }
-        }
-    }
-
-    # Handle non-canonical files
-    if ((Test-Path -LiteralPath $targetFull) -and (Test-Path -LiteralPath $canonicalFull)) {
-        $targetItems = Get-ChildItem -LiteralPath $targetFull -Force -ErrorAction SilentlyContinue
-        $hasConflicts = $false
-        foreach ($f in $targetItems) {
-            $canonicalMatch = Join-Path $canonicalFull $f.Name
-            if (-not (Test-Path -LiteralPath $canonicalMatch)) {
-                $hasConflicts = $true
-                if ($copyExisting) {
-                    if ($dryRun) {
-                        Write-Host "[DRY RUN] Would merge $($f.FullName) -> $canonicalFull"
-                    } else {
-                        Copy-Item -LiteralPath $f.FullName -Destination $canonicalFull -Recurse -Force
-                        Write-Host "Merged non-canonical file: $($f.Name) -> $canonicalDir/"
-                    }
-                } else {
-                    Write-Host "Conflict: $targetDir/$($f.Name) is not in $canonicalDir"
-                }
-            }
-        }
-        if ($hasConflicts -and -not $copyExisting) {
-            throw "Conflicts detected in $targetDir. Use -CopyExisting to merge files into $canonicalDir before syncing."
-        }
-    }
-
-    if (-not (Test-Path -LiteralPath $canonicalFull)) {
+function Remove-SymlinkIfNeeded {
+    param([string]$path, [bool]$migrate, [bool]$dryRun)
+    if (-not (Test-Path -LiteralPath $path)) { return }
+    $item = Get-Item -LiteralPath $path -Force
+    $isLink = [bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)
+    if (-not $isLink) { return }
+    if ($migrate) {
         if ($dryRun) {
-            Write-Host "[DRY RUN] Would create $canonicalDir (empty)"
+            Write-Host "[DRY RUN] Would remove symlink $path"
         } else {
-            New-Item -ItemType Directory -Path $canonicalFull -Force | Out-Null
+            Remove-Item -LiteralPath $path -Force
+            Write-Host "Migrated: removed symlink $path"
         }
-        Write-Host "Canonical folder $canonicalDir created (empty). Add files and re-run to sync."
-        return 0
+    } else {
+        throw "$path is a symlink. Use -Migrate to convert to a copy."
     }
+}
 
+function Invoke-ReverseSync {
+    param([string]$src, [string]$dest, [bool]$dryRun)
+    if (-not (Test-Path -LiteralPath $src)) { return }
+    # Skip if src is a symlink (it points at canonical already)
+    $srcItem = Get-Item -LiteralPath $src -Force
+    if ([bool]($srcItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) { return }
+    if (-not (Test-Path -LiteralPath $dest)) {
+        New-Item -ItemType Directory -Path $dest -Force | Out-Null
+    }
     if ($dryRun) {
-        Write-Host "[DRY RUN] Would sync $canonicalDir -> $targetDir"
-        return 0
+        Write-Host "[DRY RUN] Would reverse-sync $src -> $dest"
+        return
     }
+    Get-ChildItem -LiteralPath $src -Force | Copy-Item -Destination $dest -Recurse -Force
+    Write-Host "Reverse-synced: $src -> $dest"
+}
 
-    # Sync: mirror canonical to target (clean copy)
+function Invoke-ForwardSync {
+    param([string]$src, [string]$dest, [bool]$dryRun)
+    if (-not (Test-Path -LiteralPath $src)) { return }
+    if ($dryRun) {
+        Write-Host "[DRY RUN] Would forward-sync $src -> $dest"
+        return
+    }
+    $parentDir = Split-Path -Parent $dest
     if (-not (Test-Path -LiteralPath $parentDir)) {
         New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
     }
-    if (Test-Path -LiteralPath $targetFull) {
-        Remove-Item -LiteralPath $targetFull -Recurse -Force
+    if (Test-Path -LiteralPath $dest) {
+        Remove-Item -LiteralPath $dest -Recurse -Force
     }
-    Copy-Item -LiteralPath $canonicalFull -Destination $targetFull -Recurse -Force
-    Write-Host "Synced: $canonicalDir -> $targetDir"
-    return 0
+    Copy-Item -LiteralPath $src -Destination $dest -Recurse -Force
+    Write-Host "Forward-synced: $src -> $dest"
 }
 
 function New-SymlinkForTarget {
     param(
         [string]$root,
-        [string]$ideName,
         [string]$targetRelativePath,
         [string]$canonicalDir,
-        [bool]$copyExisting,
         [bool]$dryRun,
         [bool]$allowJunctionFallback
     )
@@ -162,33 +134,20 @@ function New-SymlinkForTarget {
             $linkTarget = $item.Target
             if ($linkTarget -and ($linkTarget -match "\.claude[\\/](commands|skills)$")) {
                 Write-Host "Already a symlink: $targetPath"
-                return 0
+                return
             }
-            Write-Error "$targetPath is a symlink but not to $canonicalDir."
+            throw "$targetPath is a symlink but not to $canonicalDir."
         }
         if ($item.PSIsContainer) {
-            if ($copyExisting) {
-                if ($dryRun) {
-                    Write-Host "[DRY RUN] Would copy $targetPath into $canonicalDir and replace with symlink"
-                    return 0
-                }
-                Write-Host "Copying existing $targetPath into $canonicalDir ..."
-                if (-not (Test-Path -LiteralPath $canonicalFull)) {
-                    New-Item -ItemType Directory -Path $canonicalFull -Force | Out-Null
-                }
-                Get-ChildItem -LiteralPath $targetPath -Force | Copy-Item -Destination $canonicalFull -Recurse -Force
-                Remove-Item -LiteralPath $targetPath -Recurse -Force
-            } else {
-                Write-Error "Target $targetPath already exists. Use -CopyExisting to merge and replace."
-            }
+            throw "$targetPath already exists as a directory. Remove it or use copy mode."
         } else {
-            Write-Error "Target $targetPath exists as a file. Remove it first."
+            throw "$targetPath exists as a file. Remove it first."
         }
     }
 
     if ($dryRun) {
         Write-Host "[DRY RUN] Would create symlink $targetPath -> $canonicalFull"
-        return 0
+        return
     }
 
     if (-not (Test-Path -LiteralPath $canonicalFull)) {
@@ -205,7 +164,7 @@ function New-SymlinkForTarget {
         Write-Host "Created symbolic link: $targetPath -> $canonicalFull"
     } catch {
         if (-not $allowJunctionFallback) { throw }
-        Write-Host "Symbolic link creation failed for $targetPath. Falling back to junction."
+        Write-Host "Symbolic link failed for $targetPath. Falling back to junction."
         $cmd = "mklink /J `"$targetPath`" `"$canonicalFull`""
         $null = cmd /c $cmd
         if ($LASTEXITCODE -ne 0) {
@@ -213,10 +172,10 @@ function New-SymlinkForTarget {
         }
         Write-Host "Created junction: $targetPath -> $canonicalFull"
     }
-    return 0
 }
 
-# --- Main ---
+# ─── Main ─────────────────────────────────────────────────────────────
+
 $repoFull = (Resolve-Path -LiteralPath $RepoRoot).Path
 Set-Location $repoFull
 
@@ -234,16 +193,6 @@ if (-not $Ide) {
     Write-Error "Specify -Ide cursor,windsurf,kilocode,antigravity or run with -Detect first."
 }
 
-if ($Method -eq 'symlink') {
-    Write-Host "WARNING: Symlink mode selected. Known limitations:"
-    Write-Host "  - Cursor has a documented bug where directory symlinks may not work"
-    Write-Host "  - Windows requires Developer Mode or elevated privileges for symlinks"
-    Write-Host "  - File-watching behavior varies across IDEs with symlinked directories"
-    Write-Host "  - Git handling of symlinks is inconsistent across platforms"
-    Write-Host "Consider using the default copy method instead (omit -Method or use -Method copy)."
-    Write-Host ""
-}
-
 $ideList = @(
     $Ide |
         ForEach-Object { $_ -split '[,;\s]+' } |
@@ -257,31 +206,90 @@ foreach ($ide in $ideList) {
     }
 }
 
-$exitCode = 0
-foreach ($ide in $ideList) {
-    try {
-        if ($Type -eq 'commands' -or $Type -eq 'all') {
-            $target = $targetsCommands[$ide]
-            if ($Method -eq 'copy') {
-                $null = Copy-SyncTarget -root $repoFull -canonicalDir $canonicalCommands -targetDir $target -copyExisting $CopyExisting.IsPresent -migrate $Migrate.IsPresent -dryRun $DryRun.IsPresent
-            } else {
-                $null = New-SymlinkForTarget -root $repoFull -ideName $ide -targetRelativePath $target -canonicalDir $canonicalCommands -copyExisting $CopyExisting.IsPresent -dryRun $DryRun.IsPresent -allowJunctionFallback (-not $NoJunctionFallback.IsPresent)
-            }
-        }
-        if ($Type -eq 'skills' -or $Type -eq 'all') {
-            $skillsTarget = $targetsSkills[$ide]
-            if ($skillsTarget) {
-                if ($Method -eq 'copy') {
-                    $null = Copy-SyncTarget -root $repoFull -canonicalDir $canonicalSkills -targetDir $skillsTarget -copyExisting $CopyExisting.IsPresent -migrate $Migrate.IsPresent -dryRun $DryRun.IsPresent
-                } else {
-                    $null = New-SymlinkForTarget -root $repoFull -ideName $ide -targetRelativePath $skillsTarget -canonicalDir $canonicalSkills -copyExisting $CopyExisting.IsPresent -dryRun $DryRun.IsPresent -allowJunctionFallback (-not $NoJunctionFallback.IsPresent)
+# ── Symlink mode ──────────────────────────────────────────────────────
+
+if ($Method -eq 'symlink') {
+    Write-Host "WARNING: Symlink mode selected. Known limitations:"
+    Write-Host "  - Cursor has a documented bug where directory symlinks may not work"
+    Write-Host "  - Windows requires Developer Mode or elevated privileges for symlinks"
+    Write-Host "  - File-watching behavior varies across IDEs with symlinked directories"
+    Write-Host "  - Git handling of symlinks is inconsistent across platforms"
+    Write-Host "Consider using the default copy method instead."
+    Write-Host ""
+
+    $exitCode = 0
+    foreach ($ide in $ideList) {
+        try {
+            if ($Type -eq 'commands' -or $Type -eq 'all') {
+                $target = $commandsMap[$ide]
+                if ($target) {
+                    New-SymlinkForTarget -root $repoFull -targetRelativePath $target -canonicalDir $canonicalCommands -dryRun $DryRun.IsPresent -allowJunctionFallback (-not $NoJunctionFallback.IsPresent)
                 }
             }
+            if ($Type -eq 'skills' -or $Type -eq 'all') {
+                $target = $skillsMap[$ide]
+                if ($target) {
+                    New-SymlinkForTarget -root $repoFull -targetRelativePath $target -canonicalDir $canonicalSkills -dryRun $DryRun.IsPresent -allowJunctionFallback (-not $NoJunctionFallback.IsPresent)
+                }
+            }
+        } catch {
+            Write-Host $_.Exception.Message
+            $exitCode = 1
+            break
         }
-    } catch {
-        Write-Host $_.Exception.Message
-        $exitCode = 2
-        break
+    }
+    exit $exitCode
+}
+
+# ── Copy mode: two-phase sync ────────────────────────────────────────
+
+# Collect target dirs
+$commandsTargets = @()
+$skillsTargets = @()
+foreach ($ide in $ideList) {
+    if ($Type -eq 'commands' -or $Type -eq 'all') {
+        $t = $commandsMap[$ide]
+        if ($t) { $commandsTargets += (Join-Path $repoFull $t) }
+    }
+    if ($Type -eq 'skills' -or $Type -eq 'all') {
+        $t = $skillsMap[$ide]
+        if ($t) { $skillsTargets += (Join-Path $repoFull $t) }
     }
 }
-exit $exitCode
+
+$canonicalCommandsFull = Join-Path $repoFull $canonicalCommands
+$canonicalSkillsFull = Join-Path $repoFull $canonicalSkills
+
+# Handle symlink migration
+try {
+    foreach ($t in ($commandsTargets + $skillsTargets)) {
+        Remove-SymlinkIfNeeded -path $t -migrate $Migrate.IsPresent -dryRun $DryRun.IsPresent
+    }
+} catch {
+    Write-Host $_.Exception.Message
+    exit 1
+}
+
+# Ensure canonical dirs exist
+if (-not (Test-Path -LiteralPath $canonicalCommandsFull)) {
+    New-Item -ItemType Directory -Path $canonicalCommandsFull -Force | Out-Null
+}
+if (-not (Test-Path -LiteralPath $canonicalSkillsFull)) {
+    New-Item -ItemType Directory -Path $canonicalSkillsFull -Force | Out-Null
+}
+
+# Phase 1: Reverse-sync
+foreach ($t in $commandsTargets) {
+    Invoke-ReverseSync -src $t -dest $canonicalCommandsFull -dryRun $DryRun.IsPresent
+}
+foreach ($t in $skillsTargets) {
+    Invoke-ReverseSync -src $t -dest $canonicalSkillsFull -dryRun $DryRun.IsPresent
+}
+
+# Phase 2: Forward-sync
+foreach ($t in $commandsTargets) {
+    Invoke-ForwardSync -src $canonicalCommandsFull -dest $t -dryRun $DryRun.IsPresent
+}
+foreach ($t in $skillsTargets) {
+    Invoke-ForwardSync -src $canonicalSkillsFull -dest $t -dryRun $DryRun.IsPresent
+}
