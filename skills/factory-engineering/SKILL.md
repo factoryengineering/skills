@@ -25,9 +25,9 @@ For Copilot commands, use sync (symlinks do not apply).
 
 Primary workflow, script options, conflict resolution, and mapping tables: **[sync.md](sync.md)**.
 
-Run scripts from the **repository root**. Bash: `scripts/sync-ide.sh`. PowerShell: `scripts/Sync-Ide.ps1`. Use `--detect` / `-Detect` to list IDEs before syncing; use `--copy-existing` / `-CopyExisting` to merge existing target folders into the canonical folder first. Use `--dry-run` / `-DryRun` to preview changes. Use `--migrate` / `-Migrate` to convert existing symlinks to copies.
+Run scripts from the **repository root**. Bash: `bash path/to/skill/scripts/sync-ide.sh`. PowerShell: `path/to/skill/scripts/Sync-Ide.ps1`. After installation the skill lives at `.claude/skills/factory-engineering/`. Use `--detect` / `-Detect` to list IDEs before syncing; use `--copy-existing` / `-CopyExisting` to merge existing target folders into the canonical folder first. Use `--dry-run` / `-DryRun` to preview changes. Use `--migrate` / `-Migrate` to convert existing symlinks to copies.
 
-**Pre-commit hook:** Install `scripts/pre-commit-sync.sh` as `.git/hooks/pre-commit` to auto-sync before each commit.
+**Pre-commit hook:** Install `path/to/skill/scripts/pre-commit-sync.sh` as `.git/hooks/pre-commit` to auto-sync before each commit.
 
 ---
 

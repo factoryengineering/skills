@@ -85,8 +85,7 @@ function Copy-SyncTarget {
                 Write-Host "Migrating: removing symlink $targetFull ..."
                 Remove-Item -LiteralPath $targetFull -Force
             } else {
-                Write-Host "Warning: $targetFull is a symlink. Use -Migrate to convert to a copy."
-                return 1
+                throw "$targetFull is a symlink. Use -Migrate to convert to a copy."
             }
         }
     }
@@ -112,8 +111,7 @@ function Copy-SyncTarget {
             }
         }
         if ($hasConflicts -and -not $copyExisting) {
-            Write-Host "  Use -CopyExisting to merge these files into $canonicalDir before syncing."
-            return 2
+            throw "Conflicts detected in $targetDir. Use -CopyExisting to merge files into $canonicalDir before syncing."
         }
     }
 
@@ -132,25 +130,14 @@ function Copy-SyncTarget {
         return 0
     }
 
-    # Sync: create target and copy
+    # Sync: mirror canonical to target (clean copy)
     if (-not (Test-Path -LiteralPath $parentDir)) {
         New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
     }
-    if (-not (Test-Path -LiteralPath $targetFull)) {
-        New-Item -ItemType Directory -Path $targetFull -Force | Out-Null
+    if (Test-Path -LiteralPath $targetFull) {
+        Remove-Item -LiteralPath $targetFull -Recurse -Force
     }
-
-    # Remove files in target not in canonical (clean sync)
-    $targetItems = Get-ChildItem -LiteralPath $targetFull -Force -ErrorAction SilentlyContinue
-    foreach ($f in $targetItems) {
-        $canonicalMatch = Join-Path $canonicalFull $f.Name
-        if (-not (Test-Path -LiteralPath $canonicalMatch)) {
-            Remove-Item -LiteralPath $f.FullName -Recurse -Force
-        }
-    }
-
-    # Copy canonical to target
-    Get-ChildItem -LiteralPath $canonicalFull -Force | Copy-Item -Destination $targetFull -Recurse -Force
+    Copy-Item -LiteralPath $canonicalFull -Destination $targetFull -Recurse -Force
     Write-Host "Synced: $canonicalDir -> $targetDir"
     return 0
 }
@@ -186,6 +173,9 @@ function New-SymlinkForTarget {
                     return 0
                 }
                 Write-Host "Copying existing $targetPath into $canonicalDir ..."
+                if (-not (Test-Path -LiteralPath $canonicalFull)) {
+                    New-Item -ItemType Directory -Path $canonicalFull -Force | Out-Null
+                }
                 Get-ChildItem -LiteralPath $targetPath -Force | Copy-Item -Destination $canonicalFull -Recurse -Force
                 Remove-Item -LiteralPath $targetPath -Recurse -Force
             } else {

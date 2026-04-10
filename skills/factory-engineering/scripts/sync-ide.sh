@@ -188,20 +188,10 @@ copy_sync() {
     return 0
   fi
 
-  # Sync: mirror canonical to target
+  # Sync: mirror canonical to target (clean copy)
   mkdir -p "$parent_dir"
-  mkdir -p "$target_dir"
-  # Remove files in target that are not in canonical (clean sync)
-  for f in "$target_dir"/*; do
-    [[ -e "$f" ]] || continue
-    local base
-    base=$(basename "$f")
-    if [[ ! -e "$canonical_dir/$base" ]]; then
-      rm -rf "$target_dir/$base"
-    fi
-  done
-  # Copy canonical files to target
-  cp -R "$canonical_dir"/. "$target_dir/"
+  rm -rf "$target_dir"
+  cp -R "$canonical_dir" "$target_dir"
   echo "Synced: $canonical_dir -> $target_dir"
 }
 

@@ -24,10 +24,10 @@ bash .claude/skills/factory-engineering/scripts/sync-ide.sh --ide windsurf,kiloc
 
 ```powershell
 # Detect installed IDEs
-.\scripts\Sync-Ide.ps1 -Detect
+.\.claude\skills\factory-engineering\scripts\Sync-Ide.ps1 -Detect
 
 # Sync to all detected IDEs
-.\scripts\Sync-Ide.ps1 -Ide "windsurf,kilocode,antigravity"
+.\.claude\skills\factory-engineering\scripts\Sync-Ide.ps1 -Ide "windsurf,kilocode,antigravity"
 ```
 
 Sync only for the IDEs your team uses, then commit the copied files. After that, ask your agent to sync command folders or Copilot prompts as needed.

@@ -21,7 +21,7 @@ Canonical **commands and workflows** live in **`.claude/commands/`**. Canonical 
    - **Existing symlink:** If a target is a symlink (from a previous setup), offer to convert it with `--migrate`.
    - **Non-canonical files:** If a target directory has files not present in the canonical folder, inform the user. Offer to merge them into canonical with `--copy-existing`.
 
-4. **Sync files.** From repo root: Bash `scripts/sync-ide.sh` or PowerShell `scripts/Sync-Ide.ps1`. Pass IDEs (e.g. `--ide cursor,windsurf` or `-Ide "cursor,windsurf"`). Use `--type all` (default) for both commands and skills; `--type commands` or `--type skills` for one. Use `--dry-run` / `-DryRun` to preview.
+4. **Sync files.** From repo root: Bash `bash path/to/skill/scripts/sync-ide.sh` or PowerShell `path\to\skill\scripts\Sync-Ide.ps1`. After installation the skill lives at `.claude/skills/factory-engineering/`. Pass IDEs (e.g. `--ide cursor,windsurf` or `-Ide "cursor,windsurf"`). Use `--type all` (default) for both commands and skills; `--type commands` or `--type skills` for one. Use `--dry-run` / `-DryRun` to preview.
 
 5. **Set up ongoing sync** (recommend one):
    - **Pre-commit hook** (recommended): Install `scripts/pre-commit-sync.sh` as `.git/hooks/pre-commit` to auto-sync before each commit.
@@ -52,10 +52,10 @@ Run from the **repository root** (or pass `--repo-root` / `-RepoRoot`).
 
 | Goal | Command |
 |------|---------|
-| Detect | `.\scripts\Sync-Ide.ps1 -Detect` |
-| Sync all (copy) | `.\scripts\Sync-Ide.ps1 -Ide "cursor,windsurf"` |
-| Sync commands only | `.\scripts\Sync-Ide.ps1 -Type commands -Ide cursor` |
-| Preview changes | `.\scripts\Sync-Ide.ps1 -DryRun -Ide "cursor,windsurf"` |
+| Detect | `path\to\skill\scripts\Sync-Ide.ps1 -Detect` |
+| Sync all (copy) | `path\to\skill\scripts\Sync-Ide.ps1 -Ide "cursor,windsurf"` |
+| Sync commands only | `path\to\skill\scripts\Sync-Ide.ps1 -Type commands -Ide cursor` |
+| Preview changes | `path\to\skill\scripts\Sync-Ide.ps1 -DryRun -Ide "cursor,windsurf"` |
 | Merge non-canonical files | `-CopyExisting` |
 | Migrate from symlinks | `-Migrate` |
 | Use symlinks (legacy) | `-Method symlink` |
