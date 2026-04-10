@@ -8,71 +8,86 @@ Skills for setting up and maintaining a [Factory Engineering](https://factoryeng
 npx openskills install factoryengineering/skills
 ```
 
-This installs both skills into `.claude/skills/` in your project. Claude Code, Cursor, and GitHub Copilot read `.claude/skills/` directly. Windsurf, Kilo Code, and Antigravity need a symlink to find them.
+This installs both skills into `.claude/skills/` in your project. Claude Code, Cursor, and GitHub Copilot read `.claude/skills/` directly. Windsurf, Kilo Code, and Antigravity need a copy of the skills folder.
 
 **Bash (macOS/Linux):**
 
 ```bash
-# Windsurf
-mkdir -p .windsurf && ln -s ../.claude/skills .windsurf/skills
+# Detect installed IDEs
+bash .claude/skills/factory-engineering/scripts/sync-ide.sh --detect
 
-# Kilo Code
-mkdir -p .kilocode && ln -s ../.claude/skills .kilocode/skills
-
-# Antigravity
-mkdir -p .agent && ln -s ../.claude/skills .agent/skills
+# Sync to all detected IDEs (copies files from .claude/ to IDE folders)
+bash .claude/skills/factory-engineering/scripts/sync-ide.sh --ide windsurf,kilocode,antigravity
 ```
 
 **PowerShell (Windows):**
 
 ```powershell
-# Windsurf
-New-Item -ItemType Directory -Force .windsurf
-New-Item -ItemType SymbolicLink -Path .windsurf\skills -Target ..\.claude\skills
+# Detect installed IDEs
+.\scripts\Sync-Ide.ps1 -Detect
 
-# Kilo Code
-New-Item -ItemType Directory -Force .kilocode
-New-Item -ItemType SymbolicLink -Path .kilocode\skills -Target ..\.claude\skills
-
-# Antigravity
-New-Item -ItemType Directory -Force .agent
-New-Item -ItemType SymbolicLink -Path .agent\skills -Target ..\.claude\skills
+# Sync to all detected IDEs
+.\scripts\Sync-Ide.ps1 -Ide "windsurf,kilocode,antigravity"
 ```
 
-Create symlinks only for the IDEs your team uses, then commit them. After that, ask your agent to set up command symlinks or sync Copilot prompts as needed.
+Sync only for the IDEs your team uses, then commit the copied files. After that, ask your agent to sync command folders or Copilot prompts as needed.
+
+**Manual alternative** (if you prefer not to use the script):
+
+```bash
+# Windsurf
+mkdir -p .windsurf/skills && cp -R .claude/skills/. .windsurf/skills/
+
+# Kilo Code
+mkdir -p .kilocode/skills && cp -R .claude/skills/. .kilocode/skills/
+
+# Antigravity
+mkdir -p .agent/skills && cp -R .claude/skills/. .agent/skills/
+```
+
+> **Migrating from symlinks?** If you previously used symlinks, run the sync script with `--migrate` to convert them to copies. See the [migration guide](skills/factory-engineering/sync.md#migration-from-symlinks).
 
 ## Skills
 
 ### factory-engineering
 
-Cross-IDE configuration for commands, workflows, and skills. Establishes `.claude/commands/` and `.claude/skills/` as canonical locations and creates symlinks so every IDE finds them.
+Cross-IDE configuration for commands, workflows, and skills. Establishes `.claude/commands/` and `.claude/skills/` as canonical locations and copies files to IDE-specific folders so every IDE finds them.
 
-**Symlink mapping (commands):**
+**Sync mapping (commands):**
 
-| IDE | Symlink created | Points to |
-|-----|-----------------|-----------|
-| Cursor | `.cursor/commands` | `.claude/commands` |
-| Windsurf | `.windsurf/workflows` | `.claude/commands` |
-| Kilo Code | `.kilocode/workflows` | `.claude/commands` |
-| Antigravity | `.agent/workflows` | `.claude/commands` |
+| IDE | Destination | Source |
+|-----|-------------|--------|
+| Cursor | `.cursor/commands/` | `.claude/commands/` |
+| Windsurf | `.windsurf/workflows/` | `.claude/commands/` |
+| Kilo Code | `.kilocode/workflows/` | `.claude/commands/` |
+| Antigravity | `.agent/workflows/` | `.claude/commands/` |
 
-**Symlink mapping (skills):**
+**Sync mapping (skills):**
 
-| IDE | Symlink created | Points to |
-|-----|-----------------|-----------|
-| Windsurf | `.windsurf/skills` | `.claude/skills` |
-| Kilo Code | `.kilocode/skills` | `.claude/skills` |
-| Antigravity | `.agent/skills` | `.claude/skills` |
+| IDE | Destination | Source |
+|-----|-------------|--------|
+| Windsurf | `.windsurf/skills/` | `.claude/skills/` |
+| Kilo Code | `.kilocode/skills/` | `.claude/skills/` |
+| Antigravity | `.agent/skills/` | `.claude/skills/` |
 
-Cursor and GitHub Copilot read `.claude/skills/` directly — no skills symlink needed.
+Cursor and GitHub Copilot read `.claude/skills/` directly — no skills copy needed.
 
-**GitHub Copilot** uses `.prompt.md` files in `.github/prompts/`, so commands are synced rather than symlinked. A Python script handles the conversion.
+**GitHub Copilot** uses `.prompt.md` files in `.github/prompts/`, so commands are synced (converted) rather than copied. A Python script handles the conversion.
+
+**Keeping files in sync:** Install the pre-commit hook to auto-sync before each commit:
+
+```bash
+cp .claude/skills/factory-engineering/scripts/pre-commit-sync.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+Or re-run the sync script manually after changing canonical files.
 
 **After installing, ask your agent:**
 
-> Set up symlinks for Cursor and Windsurf.
+> Sync my commands and skills to Cursor and Windsurf.
 
-The agent reads the factory-engineering skill, detects your IDEs, and runs the appropriate script. It will confirm before making changes and offer to copy existing content into the canonical folders if needed.
+The agent reads the factory-engineering skill, detects your IDEs, and runs the sync script. It will confirm before making changes and offer to merge existing content into the canonical folders if needed.
 
 For GitHub Copilot, ask:
 
@@ -100,13 +115,17 @@ This repository provides the **factory-engineering** skill that wires up the can
 skills/
 ├── factory-engineering/
 │   ├── SKILL.md                          # Skill definition
-│   ├── symlinks.md                       # Symlink workflow and mapping tables
+│   ├── sync.md                           # Copy-based sync workflow (primary)
+│   ├── symlinks.md                       # Symlink workflow (legacy fallback)
 │   ├── sync-copilot-prompts.md           # Copilot sync workflow and frontmatter rules
 │   ├── references/
 │   │   └── prompt-files-spec.md          # VS Code prompt file spec summary
 │   └── scripts/
-│       ├── setup-symlinks.sh             # Bash symlink setup
-│       ├── Setup-Symlinks.ps1            # PowerShell symlink setup
+│       ├── sync-ide.sh                   # Bash: copy-based IDE sync (primary)
+│       ├── Sync-Ide.ps1                  # PowerShell: copy-based IDE sync (primary)
+│       ├── pre-commit-sync.sh            # Pre-commit hook for auto-sync
+│       ├── setup-symlinks.sh             # Bash: symlink-only setup (legacy)
+│       ├── Setup-Symlinks.ps1            # PowerShell: symlink-only setup (legacy)
 │       └── sync_copilot_prompts.py       # Copilot prompt sync
 └── skill-optimizer/
     ├── SKILL.md                          # Skill definition
