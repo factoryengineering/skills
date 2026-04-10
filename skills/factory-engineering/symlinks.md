@@ -1,5 +1,7 @@
 # Symlinks
 
+> **Note:** Copy-based sync is now the recommended approach. See **[sync.md](sync.md)** for the primary workflow and the new `sync-ide.sh` / `Sync-Ide.ps1` scripts. The symlink scripts below remain available for backward compatibility or when symlinks are explicitly preferred. Pass `--method=symlink` to the new sync scripts to use symlinks with those tools instead.
+
 Canonical **commands and workflows** live in **`.claude/commands/`**. Canonical **skills** live in **`.claude/skills/`**. Each IDE looks in different folders. The scripts create links so one folder of each type works everywhere.
 
 **Supported IDEs:** Cursor, Windsurf, Kilo Code, Antigravity. Cursor and GitHub Copilot read `.claude/skills/` directly—no skills symlink. For Copilot commands use sync (see [sync-copilot-prompts.md](sync-copilot-prompts.md)).
