@@ -194,8 +194,7 @@ if (-not $Ide) {
 }
 
 $ideList = @(
-    $Ide |
-        ForEach-Object { $_ -split '[,;\s]+' } |
+    (($Ide -join ',') -split '[,;\s]+') |
         ForEach-Object { $_.Trim().ToLowerInvariant() } |
         Where-Object { $_ }
 )
@@ -247,12 +246,13 @@ if ($Method -eq 'symlink') {
 $commandsTargets = @()
 $skillsTargets = @()
 foreach ($ide in $ideList) {
+    $ideKey = [string]$ide
     if ($Type -eq 'commands' -or $Type -eq 'all') {
-        $t = $commandsMap[$ide]
+        $t = $commandsMap[$ideKey]
         if ($t) { $commandsTargets += (Join-Path $repoFull $t) }
     }
     if ($Type -eq 'skills' -or $Type -eq 'all') {
-        $t = $skillsMap[$ide]
+        $t = $skillsMap[$ideKey]
         if ($t) { $skillsTargets += (Join-Path $repoFull $t) }
     }
 }

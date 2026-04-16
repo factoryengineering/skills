@@ -10,6 +10,12 @@ npx openskills install factoryengineering/skills
 
 This installs both skills into `.claude/skills/` in your project. Claude Code, Cursor, and GitHub Copilot read `.claude/skills/` directly. Windsurf, Kilo Code, and Antigravity need a copy of the skills folder.
 
+## Sync
+
+To sync, the recommended way is to ask your agent: "Please sync commands and skills."  
+   
+Alternatively you do it yourself using one of the following methods:
+
 **Bash (macOS/Linux):**
 
 ```bash
@@ -30,7 +36,6 @@ bash .claude/skills/factory-engineering/scripts/sync-ide.sh --ide windsurf,kiloc
 .\.claude\skills\factory-engineering\scripts\Sync-Ide.ps1 -Ide "windsurf,kilocode,antigravity"
 ```
 
-Sync only for the IDEs your team uses, then commit the copied files. After that, ask your agent to sync command folders or Copilot prompts as needed.
 
 **Manual alternative** (if you prefer not to use the script):
 
@@ -44,6 +49,8 @@ mkdir -p .kilocode/skills && cp -R .claude/skills/. .kilocode/skills/
 # Antigravity
 mkdir -p .agent/skills && cp -R .claude/skills/. .agent/skills/
 ```
+
+## Migration
 
 > **Migrating from symlinks?** If you previously used symlinks, run the sync script with `--migrate` to convert them to copies. See the [migration guide](skills/factory-engineering/sync.md#migration-from-symlinks).
 
