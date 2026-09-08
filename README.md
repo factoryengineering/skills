@@ -100,6 +100,10 @@ For GitHub Copilot, ask:
 
 > Sync my commands to GitHub Copilot prompt files.
 
+### night-shift-setup
+
+Stands up the night shift for an organization, from nothing to a running nightly sweep. Creates the Night Shift Log application from a committed seed of 47 definitions and its manifest, registers the practice and each tracked repository exactly once, and writes the per-repository configuration the worker refuses to run without. Run once per organization, then once more per repository added.
+
 ### night-shift-coordinator
 
 Sweeps a labelled issue queue and decides what is genuinely available from the work artifacts rather than from the label, because a label goes stale the moment a pull request closes. Groups issues that touch the same files into chains instead of dispatching them side by side, then fires one working session per issue, bottom to top. Dispatches work and never performs it.
@@ -144,6 +148,12 @@ skills/
 │       ├── setup-symlinks.sh             # Bash: symlink-only setup (legacy)
 │       ├── Setup-Symlinks.ps1            # PowerShell: symlink-only setup (legacy)
 │       └── sync_copilot_prompts.py       # Copilot prompt sync
+├── night-shift-setup/
+│   ├── SKILL.md                          # Skill definition
+│   ├── creating-the-log.md               # Publishing the seed, practice and repository ceremony
+│   ├── configuring-a-repository.md       # The eight required headings, with an example
+│   ├── creating-the-routines.md          # Scheduled sessions and their loader prompts
+│   └── log-model.factual                 # The log's definitions and manifest, in four batches
 ├── night-shift-coordinator/
 │   ├── SKILL.md                          # Skill definition
 │   ├── sequencing.md                     # Grouping, chains, and how much to take
