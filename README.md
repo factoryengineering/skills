@@ -8,7 +8,7 @@ Skills for setting up and maintaining a [Factory Engineering](https://factoryeng
 npx openskills install factoryengineering/skills
 ```
 
-This installs both skills into `.claude/skills/` in your project. Claude Code, Cursor, and GitHub Copilot read `.claude/skills/` directly. Windsurf, Kilo Code, and Antigravity need a copy of the skills folder.
+This installs the skills into `.claude/skills/` in your project. Claude Code, Cursor, and GitHub Copilot read `.claude/skills/` directly. Windsurf, Kilo Code, and Antigravity need a copy of the skills folder.
 
 ## Sync
 
@@ -100,6 +100,12 @@ For GitHub Copilot, ask:
 
 > Sync my commands to GitHub Copilot prompt files.
 
+### night-shift-worker
+
+Works one GitHub issue through to a stacked pull request, unattended. Reproduces the defect or verifies a fix that already merged, fixes with a regression test, resolves a base branch a concurrent session may not have pushed yet, registers the chain as a GitHub stack, drives CI green through one review round, then stops. Per-repository settings live in a `.night-shift/config.md` the skill refuses to run without, so the protocol stays the same across every repository you track.
+
+Pairs with **night-shift-coordinator**, which sweeps the queue and dispatches the work, and **night-shift-setup**, which stands the system up.
+
 ### skill-optimizer
 
 Audits an existing skill against authoring best practices from the [Agent Skills](https://agentskills.io) open standard. Checks core quality, structure, scripts, and testing. Use after creating a skill with [skill-creator](https://github.com/anthropics/skills) to tighten and verify it.
@@ -114,7 +120,7 @@ Factory Engineering organizes AI-assisted development into three layers:
 | **Commands** | Repeatable single-agent task instructions | `.claude/commands/` | `/command @artifact` |
 | **Workflows** | Multi-agent orchestration with branching and looping | `.claude/commands/` | `/workflow @artifact` |
 
-This repository provides the **factory-engineering** skill that wires up the canonical folder structure across IDEs, and the **skill-optimizer** skill that keeps your skills sharp as they evolve.
+This repository provides the **factory-engineering** skill that wires up the canonical folder structure across IDEs, the **skill-optimizer** skill that keeps your skills sharp as they evolve, and the **night-shift** skills that let a scheduled agent work a queue of labelled issues while nobody is watching.
 
 ## Repository Structure
 
@@ -134,6 +140,13 @@ skills/
 │       ├── setup-symlinks.sh             # Bash: symlink-only setup (legacy)
 │       ├── Setup-Symlinks.ps1            # PowerShell: symlink-only setup (legacy)
 │       └── sync_copilot_prompts.py       # Copilot prompt sync
+├── night-shift-worker/
+│   ├── SKILL.md                          # Skill definition
+│   ├── stacking.md                       # Base resolution, stack registration, run confirmation
+│   ├── verifying-a-merged-fix.md         # When a fix already landed
+│   ├── night-shift-log.md                # Recording a dispatch outcome
+│   └── scripts/
+│       └── register-stack.sh             # Registers a chain of PRs as a GitHub stack
 └── skill-optimizer/
     ├── SKILL.md                          # Skill definition
     └── references/
