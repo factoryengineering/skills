@@ -26,11 +26,14 @@ Read `.night-shift/config.md` at the repository root. It carries everything abou
 
 **A missing file, or a missing required heading, is a stop.** Say which heading you could not find and open no pull request. Do not substitute a default. `configuring-a-repository.md` in the `night-shift-setup` skill lists the required headings.
 
+**If an open pull request already references your issue, comment `Duplicate dispatch, no-op.` and stop.** The dispatcher's claim check is supposed to prevent this, but it only sees one sweep. A re-fire, a manual dispatch, or a second sweep before the first one's work merges all arrive here looking exactly like a fresh assignment, and the cost of not checking is two sessions pushing different fixes for one issue.
+
 Then copy this checklist and work it:
 
 ```
 Task Progress:
 - [ ] Read .night-shift/config.md and the files its `## Read first` names
+- [ ] Check for an open pull request already referencing this issue
 - [ ] Open the Night Shift Log and resolve this repository
 - [ ] Reproduce, or verify a merged fix
 - [ ] Fix with a regression test that fails before and passes after
