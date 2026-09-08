@@ -100,6 +100,10 @@ For GitHub Copilot, ask:
 
 > Sync my commands to GitHub Copilot prompt files.
 
+### night-shift-coordinator
+
+Sweeps a labelled issue queue and decides what is genuinely available from the work artifacts rather than from the label, because a label goes stale the moment a pull request closes. Groups issues that touch the same files into chains instead of dispatching them side by side, then fires one working session per issue, bottom to top. Dispatches work and never performs it.
+
 ### night-shift-worker
 
 Works one GitHub issue through to a stacked pull request, unattended. Reproduces the defect or verifies a fix that already merged, fixes with a regression test, resolves a base branch a concurrent session may not have pushed yet, registers the chain as a GitHub stack, drives CI green through one review round, then stops. Per-repository settings live in a `.night-shift/config.md` the skill refuses to run without, so the protocol stays the same across every repository you track.
@@ -140,6 +144,11 @@ skills/
 │       ├── setup-symlinks.sh             # Bash: symlink-only setup (legacy)
 │       ├── Setup-Symlinks.ps1            # PowerShell: symlink-only setup (legacy)
 │       └── sync_copilot_prompts.py       # Copilot prompt sync
+├── night-shift-coordinator/
+│   ├── SKILL.md                          # Skill definition
+│   ├── sequencing.md                     # Grouping, chains, and how much to take
+│   ├── dispatching.md                    # The fire, its message format, a failed fire
+│   └── night-shift-log.md                # Reading and recording a sweep
 ├── night-shift-worker/
 │   ├── SKILL.md                          # Skill definition
 │   ├── stacking.md                       # Base resolution, stack registration, run confirmation
