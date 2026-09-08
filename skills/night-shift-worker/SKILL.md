@@ -9,6 +9,8 @@ One dispatch, one issue, one pull request. This skill is the whole protocol for 
 
 Sweeping the queue, deciding what is available, and ordering issues into chains belong to `night-shift-coordinator`. Standing the system up belongs to `night-shift-setup`.
 
+Your dispatch names an **issue**, and optionally a lower issue to stack on. If it names no issue, stop and say so.
+
 ## When to use
 
 - **A dispatch names one issue** in this repository, and optionally a lower issue to stack on.
