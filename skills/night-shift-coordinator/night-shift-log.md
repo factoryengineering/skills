@@ -32,7 +32,7 @@ More than one match is also a stop. Two practices, or two repositories carrying 
 claude/issue-<N>-*
 ```
 
-This is deliberate and the worker knows to expect it. The real branch arrives later on the worker's `openPullRequest` fact.
+This is deliberate and the worker knows to expect it. **The log records no actual branch at all** — `PullRequestOpened` carries a number, a summary and a time, and no branch — so this glob is the only branch the log holds. What ties a dispatch to the work that came of it is the pull request number.
 
 ## Two console forms that cost a retry each
 

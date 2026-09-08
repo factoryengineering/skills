@@ -24,14 +24,16 @@ Your outcome attaches to the `Dispatch` the coordinator created for your issue. 
 2. `sweepsInRepository($repository)`, and take the most recent sweep.
 3. `considerationsInSweep($sweep)`, and find the row whose issue number is yours. Its `dispatches` entry carries the `dispatchRef` you need.
 
-The `branch` on that dispatch is a **glob**, not a branch name — the coordinator writes `claude/issue-<N>-*` because the slug is yours to choose. It is not the branch you pushed, and you should not try to reconcile it. Your real branch goes on the `openPullRequest` fact.
+The `branch` on that dispatch is a **glob**, not a branch name — the coordinator writes `claude/issue-<N>-*` because the slug is yours to choose. It is not the branch you pushed, and you should not try to reconcile it.
+
+**The log does not record your actual branch anywhere.** `PullRequestOpened` carries the number, the summary and the time, and no branch. What ties this dispatch to the work that came of it is the pull request number. Do not reach for `findBranch` to fill the gap: that action means *the claim check found a branch that already existed*, so recording your own branch through it would make the next sweep read your own work as prior work and skip the issue.
 
 ## Two console forms that cost a retry each
 
 **A `call` yields a frame of named bindings, so it cannot be bound to one name.** Destructure what you need:
 
 ```
-let { $pullRequest as $pr } = call openPullRequest($dispatch, 123, "claude/issue-42-some-slug")
+let { $pullRequest as $pr } = call openPullRequest($dispatch, 123, "Bounded the retry so a stalled feed fails instead of hanging.")
 ```
 
 `let $pr = call openPullRequest(...)` is a parse error, not a runtime one, so it takes the whole batch with it.
