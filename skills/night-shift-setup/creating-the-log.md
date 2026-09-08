@@ -12,8 +12,10 @@
 The log is a Jinaga application reached through the Factual MCP server. Create it once per organization.
 
 1. Open a console. It starts unbound.
-2. `let $apps = applications`, and read the workspace reference from the response. Spend it in a **second** call; a batch that binds and indexes in one go is guessing at an index it has not seen yet.
-3. `create application "Night Shift Log" in $apps[0]`, on a clean console.
+2. `let $apps = applications`. The response lists every workspace you can reach, each carrying its own `ref`. Pick the workspace you want and take that `ref`. Spend it in a **second** call, because a batch that binds and indexes in one go is guessing at an index it has not seen yet.
+3. `create application "Night Shift Log" in <the ref you took>`, on a clean console.
+
+   The indexes are one flat sequence across workspaces and the applications inside them, so the workspace you want is not reliably `$apps[0]`. Read the ref off the response rather than assuming a position.
 4. Send `log-model.factual` in its four marked batches, **in file order**. Do not reorder: fact types precede the specifications that walk them, specifications precede the actions that write them, and within the fact types each one follows every type it names as a predecessor. Sending the batches separately makes a failure name its layer, because a batch stops at its first failure.
 5. `publish` after batch 3. Expect a `manifest_missing` warning; batch 4 is the answer to it.
 6. Send batch 4, then publish again.

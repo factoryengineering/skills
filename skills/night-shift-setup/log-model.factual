@@ -764,8 +764,9 @@ args:
     type: string
     from: the pattern the session's branch will match, such as
       claude/issue-14-*, because the slug is the working session's to choose and
-      the dispatcher cannot know it. The real branch arrives later on
-      openPullRequest.
+      the dispatcher cannot know it. This is the only branch the log holds. No
+      fact records the branch a session actually pushed, so what ties a dispatch
+      to the work that came of it is the pull request number on openPullRequest.
     required: true
   sessionId:
     type: string
