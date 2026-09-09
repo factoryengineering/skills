@@ -8,36 +8,7 @@ Skills for setting up and maintaining a [Factory Engineering](https://factoryeng
 npx openskills install factoryengineering/skills
 ```
 
-This installs the skills into `.claude/skills/` in your project. Claude Code, Cursor, and GitHub Copilot read `.claude/skills/` directly. Windsurf, Kilo Code, and Antigravity need a copy of the skills folder.
-
-## Sync
-
-To sync, the recommended way is to ask your agent: "Please sync commands and skills."  
-   
-Alternatively you do it yourself using one of the following methods:
-
-**Bash (macOS/Linux):**
-
-```bash
-# Detect installed IDEs
-bash .claude/skills/factory-engineering/scripts/sync-ide.sh --detect
-
-# Sync to all detected IDEs (copies files from .claude/ to IDE folders)
-bash .claude/skills/factory-engineering/scripts/sync-ide.sh --ide windsurf,kilocode,antigravity
-```
-
-**PowerShell (Windows):**
-
-```powershell
-# Detect installed IDEs
-.\.claude\skills\factory-engineering\scripts\Sync-Ide.ps1 -Detect
-
-# Sync to all detected IDEs
-.\.claude\skills\factory-engineering\scripts\Sync-Ide.ps1 -Ide "windsurf,kilocode,antigravity"
-```
-
-
-**Manual alternative** (if you prefer not to use the script):
+This installs the skills into `.claude/skills/` in your project. Claude Code, Cursor, and GitHub Copilot read `.claude/skills/` directly. Windsurf, Kilo Code, and Antigravity need a copy of the skills folder:
 
 ```bash
 # Windsurf
@@ -50,55 +21,7 @@ mkdir -p .kilocode/skills && cp -R .claude/skills/. .kilocode/skills/
 mkdir -p .agent/skills && cp -R .claude/skills/. .agent/skills/
 ```
 
-## Migration
-
-> **Migrating from symlinks?** If you previously used symlinks, run the sync script with `--migrate` to convert them to copies. See the [migration guide](skills/factory-engineering/sync.md#migration-from-symlinks).
-
 ## Skills
-
-### factory-engineering
-
-Cross-IDE configuration for commands, workflows, and skills. Establishes `.claude/commands/` and `.claude/skills/` as canonical locations and copies files to IDE-specific folders so every IDE finds them.
-
-**Sync mapping (commands):**
-
-| IDE | Destination | Source |
-|-----|-------------|--------|
-| Cursor | `.cursor/commands/` | `.claude/commands/` |
-| Windsurf | `.windsurf/workflows/` | `.claude/commands/` |
-| Kilo Code | `.kilocode/workflows/` | `.claude/commands/` |
-| Antigravity | `.agent/workflows/` | `.claude/commands/` |
-
-**Sync mapping (skills):**
-
-| IDE | Destination | Source |
-|-----|-------------|--------|
-| Windsurf | `.windsurf/skills/` | `.claude/skills/` |
-| Kilo Code | `.kilocode/skills/` | `.claude/skills/` |
-| Antigravity | `.agent/skills/` | `.claude/skills/` |
-
-Cursor and GitHub Copilot read `.claude/skills/` directly — no skills copy needed.
-
-**GitHub Copilot** uses `.prompt.md` files in `.github/prompts/`, so commands are synced (converted) rather than copied. A Python script handles the conversion.
-
-**Keeping files in sync:** Install the pre-commit hook to auto-sync before each commit:
-
-```bash
-cp .claude/skills/factory-engineering/scripts/pre-commit-sync.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-Or re-run the sync script manually after changing canonical files.
-
-**After installing, ask your agent:**
-
-> Sync my commands and skills to Cursor and Windsurf.
-
-The agent reads the factory-engineering skill, detects your IDEs, and runs the sync script. It will confirm before making changes and offer to merge existing content into the canonical folders if needed.
-
-For GitHub Copilot, ask:
-
-> Sync my commands to GitHub Copilot prompt files.
 
 ### night-shift-setup
 
@@ -114,10 +37,6 @@ Works one GitHub issue through to a stacked pull request, unattended. Reproduces
 
 Pairs with **night-shift-coordinator**, which sweeps the queue and dispatches the work, and **night-shift-setup**, which stands the system up.
 
-### skill-optimizer
-
-Audits an existing skill against authoring best practices from the [Agent Skills](https://agentskills.io) open standard. Checks core quality, structure, scripts, and testing. Use after creating a skill with [skill-creator](https://github.com/anthropics/skills) to tighten and verify it.
-
 ## How It Fits Together
 
 Factory Engineering organizes AI-assisted development into three layers:
@@ -128,26 +47,12 @@ Factory Engineering organizes AI-assisted development into three layers:
 | **Commands** | Repeatable single-agent task instructions | `.claude/commands/` | `/command @artifact` |
 | **Workflows** | Multi-agent orchestration with branching and looping | `.claude/commands/` | `/workflow @artifact` |
 
-This repository provides the **factory-engineering** skill that wires up the canonical folder structure across IDEs, the **skill-optimizer** skill that keeps your skills sharp as they evolve, and the **night-shift** skills that let a scheduled agent work a queue of labelled issues while nobody is watching.
+This repository provides the **night-shift** skills that let a scheduled agent work a queue of labelled issues while nobody is watching.
 
 ## Repository Structure
 
 ```
 skills/
-├── factory-engineering/
-│   ├── SKILL.md                          # Skill definition
-│   ├── sync.md                           # Copy-based sync workflow (primary)
-│   ├── symlinks.md                       # Symlink workflow (legacy fallback)
-│   ├── sync-copilot-prompts.md           # Copilot sync workflow and frontmatter rules
-│   ├── references/
-│   │   └── prompt-files-spec.md          # VS Code prompt file spec summary
-│   └── scripts/
-│       ├── sync-ide.sh                   # Bash: copy-based IDE sync (primary)
-│       ├── Sync-Ide.ps1                  # PowerShell: copy-based IDE sync (primary)
-│       ├── pre-commit-sync.sh            # Pre-commit hook for auto-sync
-│       ├── setup-symlinks.sh             # Bash: symlink-only setup (legacy)
-│       ├── Setup-Symlinks.ps1            # PowerShell: symlink-only setup (legacy)
-│       └── sync_copilot_prompts.py       # Copilot prompt sync
 ├── night-shift-setup/
 │   ├── SKILL.md                          # Skill definition
 │   ├── creating-the-log.md               # Publishing the seed, practice and repository ceremony
@@ -159,18 +64,13 @@ skills/
 │   ├── sequencing.md                     # Grouping, chains, and how much to take
 │   ├── dispatching.md                    # The fire, its message format, a failed fire
 │   └── night-shift-log.md                # Reading and recording a sweep
-├── night-shift-worker/
-│   ├── SKILL.md                          # Skill definition
-│   ├── stacking.md                       # Base resolution, stack registration, run confirmation
-│   ├── verifying-a-merged-fix.md         # When a fix already landed
-│   ├── night-shift-log.md                # Recording a dispatch outcome
-│   └── scripts/
-│       └── register-stack.sh             # Registers a chain of PRs as a GitHub stack
-└── skill-optimizer/
+└── night-shift-worker/
     ├── SKILL.md                          # Skill definition
-    └── references/
-        ├── best-practices.md             # Authoring rules and checklist
-        └── source.md                     # Links to Agent Skills ecosystem
+    ├── stacking.md                       # Base resolution, stack registration, run confirmation
+    ├── verifying-a-merged-fix.md         # When a fix already landed
+    ├── night-shift-log.md                # Recording a dispatch outcome
+    └── scripts/
+        └── register-stack.sh             # Registers a chain of PRs as a GitHub stack
 ```
 
 ## Learn More
