@@ -49,7 +49,7 @@ Open issues carrying the queue label are the queue. Nothing else is in scope. Do
 
 ## Decide what is actually available
 
-The label alone does not mean an issue is available. **The work artifacts are the source of truth.** For each labelled issue, search pull requests that reference it, by number in the title or body and by branch names matching the branch pattern.
+The label alone does not mean an issue is available. **The work artifacts are the source of truth.** For each labelled issue, search pull requests that claim it, and read what you find through the table below.
 
 | What you find | What it means | What to do |
 |---|---|---|
@@ -58,6 +58,19 @@ The label alone does not mean an issue is available. **The work artifacts are th
 | A **closed, unmerged** pull request | An attempt was abandoned | Say so in the dispatch. It usually records why. |
 | An unmerged branch with no pull request | Work in progress, or abandoned | Say so in the dispatch. Build on it rather than starting over. |
 | Nothing | Genuinely available | Dispatch it. |
+
+### What counts as a claim
+
+A pull request claims an issue when either of these holds.
+
+- **Its head branch matches the branch pattern for that issue**, `claude/issue-<number>-*`.
+- **Its body carries a closing keyword for that issue**, `Closes #<number>` or `Fixes #<number>`.
+
+A bare number anywhere else in a title or a body is prose, and it does not claim the issue. A pull request that explains a precedent, links a related decision, or quotes a dispatch names issues it is not working, and often names them precisely to say they are *not* done yet.
+
+**Both wrong rows are quiet ones.** A mention on an open pull request reads as someone already working it, and the sweep records a skip that reads like a considered decision. A mention on a merged one reads as a fix that already landed, and the next session is dispatched to verify work nobody has written. Neither fails and neither goes red, unlike the `merged` defect below, which at least surfaces as a session re-fixing shipped code.
+
+**The search is the source. The timeline is not.** Editing a body clears the search, but the cross-reference event stays on the issue's timeline permanently, so a timeline read still reports a claim from a pull request that no longer mentions the issue, and no edit withdraws it. Run the search.
 
 ### Fetch before you look
 
