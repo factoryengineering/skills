@@ -85,6 +85,19 @@ With no stacking clause, branch from `origin/main` after fetching. When the disp
 
 ---
 
+## Write what stays true
+
+A pull request body is read long after it is written, and other pull requests merge in between. **Do not write a value into prose that another change can silently falsify.** A number that was accurate when you wrote it goes stale with nothing to detect it, and a reader has no way to tell which of your sentences still hold.
+
+- **Report verification as what ran and what held.** "`npm ci && npm test` green from a clean checkout", not a total or a pass ratio.
+- **Name a test by its description**, which survives a test inserted above it. Never cite a test by its position.
+- **Do not state test totals or before-and-after counts.** The diff already shows what you added, and it cannot go stale.
+- **Where a number genuinely carries the argument, pin it to what it measured**: a commit, a CI run id. A rate measured in one named run stays true of that run.
+
+This holds for everything the run writes: the pull request body, a comment on the issue, a recorded question, and the log summary.
+
+---
+
 ## When to stop and ask instead
 
 Record a blocking question when proceeding either way could produce the wrong patch and you cannot settle it from the code, the tests, or the issue text. A question about a detail you can work around is not blocking, so do everything that does not depend on the answer first.
