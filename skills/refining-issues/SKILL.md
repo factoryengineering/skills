@@ -41,9 +41,10 @@ validation to the importer" is a task.
 
 What shows a criterion false depends on what the issue delivers.
 
-- **Behavior in code.** A test that drives the behavior fails.
-- **A document or a declaration.** A check that does not restate the text
-  fails. The check derives its expectation from the code the document
+- **Behavior in code.** A test that drives the behavior, and can fail when
+  the behavior is wrong.
+- **A document or a declaration.** A check that does not restate the text,
+  and can fail when the document is wrong. The check derives its expectation from the code the document
   describes, runs the document's examples through the parser or compiler, or
   reads an outcome in use, such as a live run whose recorded cost disagrees
   with the declared one.
