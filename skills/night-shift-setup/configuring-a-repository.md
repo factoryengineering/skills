@@ -12,7 +12,7 @@ It sits outside `.claude/skills/`, so reinstalling a skill cannot clobber it, an
 
 ## The headings
 
-Ten headings are recognized: the nine in the table below, every one required, plus the optional `## Branch prefix`.
+Every heading in the table below is required. `## Branch prefix` is recognized too, and is optional.
 
 **A missing required heading is a stop, not a default.** A worker that cannot find one names it and opens no pull request. `none` and `Nothing.` are legal values; absence is not, because absence cannot be told apart from an oversight.
 
@@ -39,7 +39,7 @@ Four values a reader might expect. Each is derivable, and a stored copy can only
 - **Whether stacked pull requests are enabled** comes from `register-stack.sh list` returning exit 3.
 - **Whether a workflow strips the queue label on close** changes nothing a run does, because the protocol always filters for open issues.
 
-**Anything that is not one of those ten belongs in the skill.** This file is where a second, per-repository protocol would grow if it were allowed to, and the closed list is what prevents it.
+**Anything that is not one of those headings belongs in the skill.** This file is where a second, per-repository protocol would grow if it were allowed to, and the closed list is what prevents it.
 
 ## Worked example
 

@@ -1,7 +1,7 @@
 # Worked example
 
-One backlog, nine shapes. The project is a deployment CLI: it builds an
-artifact, deploys it to staging, and promotes a staging build to production.
+One backlog. The project is a deployment CLI: it builds an artifact, deploys it
+to staging, and promotes a staging build to production.
 It has an auth check on its deploy API, a `--dry-run` flag, and a `help`
 command.
 
@@ -11,13 +11,13 @@ The shapes are not. See Provenance at the end.
 ## R1 Criteria — a decision in the criterion slot
 
 An issue lists four confusing error messages and closes with acceptance. Three
-bullets are testable. The fourth:
+bullets can be shown false. The fourth:
 
 > - Case 4 is resolved by a decision about which registry format the artifact
 >   digest uses, and the `help` text matches that decision.
 
-It has the grammar of a criterion. It names no observable change and cannot
-fail a test, because what it requires is that somebody choose. Three quarters
+It has the grammar of a criterion. It names no observable change and cannot be
+shown false, because what it requires is that somebody choose. Three quarters
 of the issue is implementable and the fourth quarter is a question wearing a
 criterion's clothes.
 
@@ -76,9 +76,9 @@ today by hand. An issue notices this and closes with:
 
 > - A test reads the timeout from all three and asserts they agree.
 
-The criterion is observable and can fail, so R1 passes. It names an outcome, so
-R2 passes. The drift is real and demonstrated, so R3 passes. It cites the
-principle its repository holds duplication to, so R4 passes. And it asks for
+The criterion is observable and can be shown false, so R1 passes. It names an
+outcome, so R2 passes. The drift is real and demonstrated, so R3 passes. It cites
+the principle its repository holds duplication to, so R4 passes. And it asks for
 exactly what that principle diagnoses.
 
 Three independent variables stand where the problem has one, and the acceptance
@@ -98,14 +98,17 @@ and closes with:
 
 > - `promote --wait`'s help text says that cancelling the wait does not cancel
 >   the deploy.
+> - A test reads `promote --help` and asserts it contains that sentence.
 
 Nothing is written twice here. The help text is the only place that fact lives,
-and the issue is right that it belongs there. The criterion is observable, so R1
-passes. It names an outcome, so R2 passes. An operator really did cancel a wait
-and assume the deploy stopped, so R3 passes. The principle about keeping an
-explanation in one place is cited, correctly, so R4 passes.
+and the issue is right that it belongs there. The first bullet is a criterion,
+a property a reviewer can see hold or fail, so R1 passes. It names an outcome, so R2
+passes. An operator really did cancel a wait and assume the deploy stopped, so
+R3 passes. The principle about keeping an explanation in one place is cited,
+correctly, so R4 passes.
 
-The test is the second copy, and it arrives with the acceptance. It can go red
+The second bullet is not a criterion about the product at all. It prescribes a
+test, and the test is the copy that arrives with the acceptance. It can go red
 for one reason: somebody rewords the sentence. It cannot notice that cancelling
 now *does* cancel the deploy, which is the only thing worth knowing. It freezes
 the wording and leaves the behavior unguarded.
@@ -113,7 +116,8 @@ the wording and leaves the behavior unguarded.
 What derives here is the flag, not the sentence. A check that every flag the
 parser registers appears in `--help`, and that nothing else does, fails when
 somebody adds or renames a flag without documenting it — a failure the code
-produces. The cancellation sentence stands on review.
+produces. The refined acceptance keeps the criterion, strikes the test, and
+says no test is to be added for the sentence: it stands on review.
 
 **The shape:** an acceptance that quotes a document back to itself. The first
 form guards a redundancy that exists; this one manufactures one that did not,

@@ -53,7 +53,7 @@ Read **[creating-the-log.md](creating-the-log.md)**. It publishes `log-model.fac
 
 ## Configure each repository
 
-Read **[configuring-a-repository.md](configuring-a-repository.md)**. It lists the nine required headings, says why each one cannot be derived or defaulted, and gives a filled-in example.
+Read **[configuring-a-repository.md](configuring-a-repository.md)**. It lists the required headings, says why each one cannot be derived or defaulted, and gives a filled-in example.
 
 The rule that keeps this from growing back into a second protocol: **anything that is not one of those headings belongs in the skill, not in the config.**
 
@@ -90,6 +90,6 @@ Read **[creating-the-routines.md](creating-the-routines.md)**. Each session's pr
 | Resource | Purpose |
 |---|---|
 | [creating-the-log.md](creating-the-log.md) | Publishing the seed, and the one-time practice and repository ceremony |
-| [configuring-a-repository.md](configuring-a-repository.md) | The nine required headings, with a worked example |
+| [configuring-a-repository.md](configuring-a-repository.md) | The required headings, with a worked example |
 | [creating-the-routines.md](creating-the-routines.md) | The scheduled sessions and their loader prompts |
 | [log-model.factual](log-model.factual) | Read and send. The log's 47 definitions and its manifest, in four batches |
