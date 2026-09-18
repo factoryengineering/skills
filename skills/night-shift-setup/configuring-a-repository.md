@@ -1,6 +1,6 @@
 # Configuring a tracked repository
 
-Every tracked repository carries `.night-shift/config.md` at its root. The worker reads it from its checkout; the coordinator reads the same file over the hosting API. There is one copy, in the repository it describes, so the two roles cannot disagree about it.
+Every tracked repository carries `.night-shift/config.md` at its root. The worker reads it from its checkout; the coordinator reads the same file over the hosting API; `refining-issues` reads it before it audits anything. There is one copy, in the repository it describes, so the roles cannot disagree about it.
 
 It sits outside `.claude/skills/`, so reinstalling a skill cannot clobber it, and outside `.claude/` entirely, because that directory is agent-harness configuration and this is protocol configuration a person maintains.
 
@@ -12,7 +12,7 @@ It sits outside `.claude/skills/`, so reinstalling a skill cannot clobber it, an
 
 ## The headings
 
-Nine headings are recognized: the eight in the table below, every one required, plus the optional `## Branch prefix`.
+Ten headings are recognized: the nine in the table below, every one required, plus the optional `## Branch prefix`.
 
 **A missing required heading is a stop, not a default.** A worker that cannot find one names it and opens no pull request. `none` and `Nothing.` are legal values; absence is not, because absence cannot be told apart from an oversight.
 
@@ -21,6 +21,7 @@ Nine headings are recognized: the eight in the table below, every one required, 
 | `## Visibility` | `private` carries a rule against quoting the repository's contents into any public place. A wrong guess is a leak, and nothing inside the container can tell you. |
 | `## Issue label` | A wrong guess silently sweeps the wrong queue, or nothing at all. |
 | `## Read first` | Which files a worker must read before touching an issue. One repository points at a build guide, another at an accepted specification, another at nothing. |
+| `## Authority` | The documents an issue must answer to, and what citing each one means. `refining-issues` runs R4 against this and nothing else. It is not derivable: which document governs, and whether citing it means naming a section or citing a principle, is a decision about how the project is run. `none` is a complete answer, and it makes R4 vacuous rather than failed. |
 | `## Before you fix` | Where "reproduce first" is replaced by something else, such as conformance criteria a change is held to. |
 | `## Verification commands` | The exact commands, in order, that must be green before every push. |
 | `## CI workflow` | The workflow *file* that gates the merge. Deriving it means parsing every workflow in the repository at whatever hour the run wakes. |
@@ -38,7 +39,7 @@ Four values a reader might expect. Each is derivable, and a stored copy can only
 - **Whether stacked pull requests are enabled** comes from `register-stack.sh list` returning exit 3.
 - **Whether a workflow strips the queue label on close** changes nothing a run does, because the protocol always filters for open issues.
 
-**Anything that is not one of those nine belongs in the skill.** This file is where a second, per-repository protocol would grow if it were allowed to, and the closed list is what prevents it.
+**Anything that is not one of those ten belongs in the skill.** This file is where a second, per-repository protocol would grow if it were allowed to, and the closed list is what prevents it.
 
 ## Worked example
 
@@ -65,6 +66,15 @@ pull request. Its sibling repositories are public.
 ## Read first
 
 - `CONTRIBUTING.md` — build commands, subsystem layout, testing rules.
+
+## Authority
+
+- `design/durable-consumer-spec.md` — the accepted specification. An issue names
+  the sections it answers to. Amendments land in its section 9, by the
+  maintainer, and never in an implementation slice.
+- `design/constitution/degrees-of-freedom-constitution.md` — the principles a
+  design answers to. An issue's **Conformance** section cites the article each
+  criterion answers to.
 
 ## Before you fix
 
