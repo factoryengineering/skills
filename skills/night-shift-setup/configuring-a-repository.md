@@ -46,11 +46,11 @@ Four values a reader might expect. Each is derivable, and a stored copy can only
 ````markdown
 # Night shift configuration
 
-The `night-shift-worker` and `night-shift-coordinator` skills read this file.
-Every `##` heading below except `## Branch prefix` is required. A missing
-heading is an error, not a default: stop and name the heading you could not
-find. Anything that is not one of these headings is protocol, and protocol
-lives in the skill.
+The `night-shift-worker`, `night-shift-coordinator`, and `refining-issues`
+skills read this file. Every `##` heading below except `## Branch prefix` is
+required. A missing heading is an error, not a default: stop and name the
+heading you could not find. Anything that is not one of these headings is
+protocol, and protocol lives in the skill.
 
 ## Visibility
 
