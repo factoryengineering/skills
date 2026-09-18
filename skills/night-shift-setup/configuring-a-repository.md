@@ -69,12 +69,9 @@ pull request. Its sibling repositories are public.
 
 ## Authority
 
-- `design/durable-consumer-spec.md` — the accepted specification. An issue names
-  the sections it answers to. Amendments land in its section 9, by the
-  maintainer, and never in an implementation slice.
-- `design/constitution/degrees-of-freedom-constitution.md` — the principles a
-  design answers to. An issue's **Conformance** section cites the article each
-  criterion answers to.
+- `docs/architecture.md` — the accepted design. An issue names the section it
+  answers to wherever one covers the change. An amendment to it is the
+  maintainer's decision and never lands in an implementation slice.
 
 ## Before you fix
 
