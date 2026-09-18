@@ -26,24 +26,36 @@ Eight checks decide it. Run R1 to R5 against one issue. Run I1 to I3 across a
 set. Each failed check has one move.
 
 Do not rewrite an issue that passes. A well-argued problem statement that
-already carries testable criteria is done, and adding structure to it costs
-review attention for nothing.
+already carries criteria that can be shown false is done, and adding structure
+to it costs review attention for nothing.
 
 ## Readiness — run against one issue
 
 ### R1. Criteria
 
-Does the issue state acceptance criteria, and can each one fail a test?
+Does the issue state acceptance criteria, and can each one be shown false?
 
-A criterion names an observable change. "A consumer whose sweeps fail reports a
-rising `sweepFailures`, reset to 0 by one successful pass" is a criterion. "Add
-sweep failure reporting to `status()`" is a task.
+A criterion names an observable change. "The importer refuses a row whose date
+is not ISO-8601, naming the row and the value" is a criterion. "Add date
+validation to the importer" is a task.
 
-"Can fail a test" means the test can go red for a reason other than an edit to
-the criterion's own subject. A criterion naming a sentence in a document — "the
-page says X", "the comment names Y" — is observable, and a test over it passes
-this reading of R1 while proving nothing. R1 still passes it: the defect is not
-that the criterion is unobservable. R5 is where it fails.
+What shows a criterion false depends on what the issue delivers.
+
+- **Behavior in code.** A test that drives the behavior fails.
+- **A document or a declaration.** A check that does not restate the text
+  fails. The check derives its expectation from the code the document
+  describes, runs the document's examples through the parser or compiler, or
+  reads an outcome in use, such as a live run whose recorded cost disagrees
+  with the declared one.
+- **A document with no such check.** A reviewer reads a stated property of the
+  page and sees whether it holds. "The section shows the token counts and the
+  prices it multiplies" is a property. "The rate is derived correctly" names a
+  method, so no reader can see it fail.
+
+Do not add a test to make a criterion pass R1. A test that fails only when
+somebody edits the text it asserts on shows nothing false, so it cannot be what
+satisfies a criterion, and `night-shift-worker` holds its regression tests to
+the same bar. An acceptance that asks for one fails R5.
 
 Fail R1 when the acceptance section is absent, or when it is a checkbox list of
 work items, or when a bullet reads "resolved by a decision about X". That last
@@ -133,11 +145,13 @@ deleted. When they can, that deletion is the requirement, and the test that
 would have guarded them has nothing left to compare.
 
 **The shape has a second form, and it is the one that slips through.** Sometimes
-the fact is written in exactly one place, and the acceptance creates the second
-copy by quoting it: "the comment names byte-stability", "the page names both
-rejection types", "`README.md` links it from its deployment section". No
-pre-existing redundancy exists to point at, so the first form does not match.
-The redundancy arrives with the test.
+the fact is written in exactly one place, and the acceptance asks for a test
+that quotes it: "a test reads the built declaration and finds `byte-stable`", "a
+test asserts the page names both rejection types". No pre-existing redundancy
+exists to point at, so the first form does not match. The redundancy arrives
+with the test. The criterion underneath is usually sound — a property of the
+page that a reviewer can see hold or fail, which is what R1 asks of a document.
+Only the test is the copy.
 
 Both forms answer one question: what could this test go red for? When the answer
 is "somebody reworded the thing it quotes", the acceptance is a copy — whether
@@ -235,8 +249,9 @@ issue has to declare itself one in its title and its acceptance. The night shift
 stops and asks rather than guessing which kind of issue it holds.
 
 Where the acceptance manufactures the copy rather than guarding one, there is
-nothing to delete and the move is smaller: strike the criterion, or replace it
-with one that derives. A derived criterion names something the *code* can
+nothing to delete and the move is smaller: strike the test and keep the
+criterion as a property a reviewer checks, or replace the test with one that
+derives. A derived criterion names something the *code* can
 falsify — a documented example that compiles against the shipped build, a
 documented path that resolves against the filesystem, a default read back out of
 the object the factory built. Each fails when the code changes, which is the
@@ -285,11 +300,12 @@ criterion answers to; **Depends on**. Drop **Conformance** where `## Authority`
 says `none` — a heading with nothing to cite is a heading that gets filled in
 with something invented.
 
-Every entry under **Tests** has to be able to fail for a reason other than an
-edit to its own subject. This is the sentence R5 most often catches too late: a
-documentation slice feels like it needs a test, a quotation is the only one
-available, and writing it here is what puts it in the suite. The night shift
-implements the acceptance it is given.
+A documentation slice may carry no **Tests** entry at all: its criteria are
+properties a reviewer checks, which R1 accepts. Every entry that is there has to
+be able to fail for a reason other than an edit to its own subject. This is the
+sentence R5 most often catches too late: a documentation slice feels like it
+needs a test, a quotation is the only one available, and writing it here is what
+puts it in the suite. The night shift implements the acceptance it is given.
 
 Name the interaction with any issue that shares an invariant, and say which one
 must not reopen the gap.
