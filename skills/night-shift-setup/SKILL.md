@@ -35,7 +35,7 @@ Task Progress:
 - [ ] Create the practice, exactly once
 - [ ] Register each tracked repository, exactly once
 - [ ] Write .night-shift/config.md in each tracked repository
-- [ ] Install and commit night-shift-worker in each tracked repository
+- [ ] Install and commit night-shift-worker and refining-issues in each tracked repository
 - [ ] Install and commit night-shift-coordinator in its own repository
 - [ ] Write .night-shift/routines.md
 - [ ] Create the sessions and fire the coordinator once by hand
@@ -53,7 +53,7 @@ Read **[creating-the-log.md](creating-the-log.md)**. It publishes `log-model.fac
 
 ## Configure each repository
 
-Read **[configuring-a-repository.md](configuring-a-repository.md)**. It lists the eight required headings, says why each one cannot be derived or defaulted, and gives a filled-in example.
+Read **[configuring-a-repository.md](configuring-a-repository.md)**. It lists the nine required headings, says why each one cannot be derived or defaulted, and gives a filled-in example.
 
 The rule that keeps this from growing back into a second protocol: **anything that is not one of those headings belongs in the skill, not in the config.**
 
@@ -65,7 +65,9 @@ The rule that keeps this from growing back into a second protocol: **anything th
 npx openskills install factoryengineering/skills
 ```
 
-Install `night-shift-worker` into each tracked repository and `night-shift-coordinator` into the repository the coordinator checks out. **Commit what you install.** A scheduled run that installs from the network at execution time can have its protocol changed by an upstream edit it never reviewed, and gains a failure mode at whatever hour it wakes.
+Install `night-shift-worker` and `refining-issues` into each tracked repository, and `night-shift-coordinator` into the repository the coordinator checks out.
+
+`refining-issues` is what fills the queue the worker drains. It is installed beside the worker, in the same repository, because it reads the same `.night-shift/config.md` and audits that repository's issues — and because the bar the queue label asserts should be legible to anyone looking at the repository whose issues carry it. A person runs it; nothing schedules it. **Commit what you install.** A scheduled run that installs from the network at execution time can have its protocol changed by an upstream edit it never reviewed, and gains a failure mode at whatever hour it wakes.
 
 Record which upstream commit each installed copy came from, so a later reader can tell an intentional local edit from an old copy.
 
@@ -88,6 +90,6 @@ Read **[creating-the-routines.md](creating-the-routines.md)**. Each session's pr
 | Resource | Purpose |
 |---|---|
 | [creating-the-log.md](creating-the-log.md) | Publishing the seed, and the one-time practice and repository ceremony |
-| [configuring-a-repository.md](configuring-a-repository.md) | The eight required headings, with a worked example |
+| [configuring-a-repository.md](configuring-a-repository.md) | The nine required headings, with a worked example |
 | [creating-the-routines.md](creating-the-routines.md) | The scheduled sessions and their loader prompts |
 | [log-model.factual](log-model.factual) | Read and send. The log's 47 definitions and its manifest, in four batches |

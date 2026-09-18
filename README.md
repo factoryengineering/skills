@@ -27,6 +27,10 @@ mkdir -p .agent/skills && cp -R .claude/skills/. .agent/skills/
 
 Stands up the night shift for an organization, from nothing to a running nightly sweep. Creates the Night Shift Log application from a committed seed of 47 definitions and its manifest, registers the practice and each tracked repository exactly once, and writes the per-repository configuration the worker refuses to run without. Run once per organization, then once more per repository added.
 
+### refining-issues
+
+Turns a backlog issue into one an unattended night-shift agent can implement, and turns a coupled set into a chain that stacks. Encodes eight checks — five that decide whether one issue is ready, three that decide whether a set is independent — plus the five moves that fix a failed check. Reads `.night-shift/config.md`, so the documents an issue answers to are the repository's own. Install it in every repository that enlists in the night shift; a person runs it, nothing schedules it.
+
 ### night-shift-coordinator
 
 Sweeps a labelled issue queue and decides what is genuinely available from the work artifacts rather than from the label, because a label goes stale the moment a pull request closes. Groups issues that touch the same files into chains instead of dispatching them side by side, then fires one working session per issue, bottom to top. Dispatches work and never performs it.
