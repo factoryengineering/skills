@@ -2,7 +2,7 @@
 
 A run that leaves no trace teaches nothing, and a run that reads no trace repeats. The host keeps the artifacts — a pull request, a comment, a label — but not the judgments: what you considered and passed over, why you ordered the work as you did, what a verdict rested on. Those die with the container unless you record them, and they help nobody unless the next run reads them.
 
-The log is a Jinaga application reached through the Factual MCP server. Open a console, run `applications`, and open the one whose routing matches. **Its manifest carries the full action catalog with argument guidance, so run `describe <action>` there rather than trusting an argument list in this file.**
+The log is a Jinaga application reached through the Factual MCP server. Open a console, run `applications`, and open the one whose routing matches. That console is yours to close, and *Close the console, on every exit path* below says when and why. **Its manifest carries the full action catalog with argument guidance, so run `describe <action>` there rather than trusting an argument list in this file.**
 
 This file is mechanics. The log is not an epilogue: you open it before the claim check and read it before you sequence.
 
@@ -46,9 +46,19 @@ let { $sweep as $sweepA } = call startSweep($repository, $headCommit)
 
 **Every variable carries `$`,** including the bound name and a specification's own variables. One statement per line; `;` only joins two on one line. A view that reads like it takes no argument may still take one, so `describe` it rather than calling it bare.
 
+## Close the console, on every exit path
+
+**`close_console` is the last log step of every run, including a run that stops early.** The server caps one identity at 16 open consoles, and every routine in a practice runs as that same identity, so each run that leaves its console open takes a slot the next one needs. Consoles idle for five days have been seen still holding theirs, so nothing reclaims them on a nightly cadence. A practice that dispatches a few issues a night fills the pool inside a week.
+
+**The paths that leak are the ones that stop early**, because the close sits at the bottom of a procedure they never reach. A stop because no practice or no repository matches, a stop because two do, a dry run that dispatches nothing, a sweep cut short by a failed fire. Close the console on each of them.
+
+**A refused `create_console` is a full pool, not an unreachable server.** `console_limit` comes back with a `candidates` list, and the run continues on one of them: take a candidate whose `dirty` is false and whose `stagedFacts` is `0`, and work in that. **Never work in a dirty candidate, and never close a dirty one.** Its staged facts belong to a session that is not yours, and closing it discards them. The clean candidate you do take is yours for the run and you close it at the end, exactly as you would close one you had opened yourself.
+
+**If every candidate is dirty the pool is genuinely exhausted, and that is still not an outage.** Do the hosting-platform work, and report the run unrecorded naming a full console pool as the reason. The two read alike in a report and have different remedies: a full pool was caused by earlier runs that did not close their consoles, and an outage belongs to whoever owns the connector.
+
 ## Rules about what goes in
 
 - **Record what you skipped, not just what you dispatched.** A skip with its reason is the evidence the claim rule is working, and it is the only record that an issue was looked at at all.
 - **Never record availability.** The hosting platform is the queue and the only authority on what is currently ready. The log holds what was observed and decided, and when. Storing "this issue is available" would create a second source of truth that can go stale, which is the exact failure the claim rule exists to catch.
 - **Write a rationale you can support.** A rationale is your own account, so quote a rule only after reading it, and name the file it comes from. A confident paraphrase of a rule that does not exist reads as evidence to every later run.
-- **If the server is unreachable, do the hosting-platform work anyway** and say in your final report that the run went unrecorded. A missing log entry is a gap; a blocked run is a worse one.
+- **If the server is unreachable, do the hosting-platform work anyway** and say in your final report that the run went unrecorded. A missing log entry is a gap; a blocked run is a worse one. **A `console_limit` refusal is not unreachability**: the server answered, and the section above says what to do with the answer.
