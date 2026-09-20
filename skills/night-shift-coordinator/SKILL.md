@@ -34,8 +34,8 @@ Task Progress:
 - [ ] Order what is available into chains
 - [ ] Dispatch bottom to top, recording each fire
 - [ ] Record every consideration, dispatch and skip
-- [ ] Report what you considered, dispatched and skipped, and your budget
 - [ ] Close the Night Shift Log console, whatever the outcome
+- [ ] Report what you considered, dispatched and skipped, and your budget
 ```
 
 ---

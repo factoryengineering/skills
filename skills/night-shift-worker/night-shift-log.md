@@ -46,7 +46,7 @@ let { $pullRequest as $pr } = call openPullRequest($dispatch, 123, "Bounded the 
 
 **The paths that leak are the ones that stop early**, because the close sits at the bottom of a procedure they never reach. A stop for a missing config heading or a missing file, a duplicate dispatch that no-ops, a repro that failed, a recorded question, a fix abandoned on a blocker. Close the console on each of them.
 
-**A refused `create_console` is a full pool, not an unreachable server.** `console_limit` comes back with a `candidates` list, and the run continues on one of them: take a candidate whose `dirty` is false and whose `stagedFacts` is `0`, and work in that. **Never work in a dirty candidate and never close one.** Its staged facts belong to a session that is not yours, and closing it discards them.
+**A refused `create_console` is a full pool, not an unreachable server.** `console_limit` comes back with a `candidates` list, and the run continues on one of them: take a candidate whose `dirty` is false and whose `stagedFacts` is `0`, and work in that. **Never work in a dirty candidate, and never close a dirty one.** Its staged facts belong to a session that is not yours, and closing it discards them. The clean candidate you do take is yours for the run and you close it at the end, exactly as you would close one you had opened yourself.
 
 **If every candidate is dirty the pool is genuinely exhausted, and that is still not an outage.** Do the hosting-platform work, and report the run unrecorded naming a full console pool as the reason. The two read alike in a report and have different remedies: a full pool was caused by earlier runs that did not close their consoles, and an outage belongs to whoever owns the connector.
 
