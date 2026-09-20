@@ -59,6 +59,8 @@ The coordinator needs to read issues, pull requests and branches across every tr
 
 A worker needs the hosting API for issues and pull requests, the Factual MCP server, and permission to run `register-stack.sh` at its installed path. **When the script's path changes, the worker's allowed-tools list changes in the same edit.** A path that no longer matches does not error; the call is simply refused at whatever hour the run wakes, and the chain is silently left unregistered.
 
+**Both roles need the harness's push-notification tool on their allowed-tools list.** A session sends that notification itself, so it does not depend on the routine's own completion-notification setting: the routine setting reports that a run finished, and the tool reports something from inside the run. They are separate mechanisms, and a routine whose completion notifications are off should still deliver one a session sends. **That last point is read from the tool contracts and has not been confirmed against a live run**, so confirm it on the first run below before you rely on it; a run whose only way of reporting an unreachable log is a notification that never arrives reports nothing at all.
+
 ## Keeping prompts and files in step
 
 The prompt files live in the coordinator's repository; the live prompts live in the routine API. They drift the moment one is edited without the other.
@@ -74,3 +76,5 @@ Sync in one direction only, from the files to the sessions, and make it a review
 ## First run
 
 Fire the coordinator by hand, in daylight, appending `Dry run. Sweep and report; dispatch nothing.` Confirm it resolves every repository and reports a queue for each. Only then let the schedule run it unattended.
+
+**Confirm the push notification on that same run**, by appending `Send a push notification saying the dry run started.` and watching for it to arrive. Do it with the routine's own completion notifications set the way you intend to leave them, because that is the combination the night shift will actually run in. If nothing arrives, the unreachable-log rule in `night-shift-log.md` has no way to reach anyone, and the tool list or the routine's settings need fixing before the schedule takes over.

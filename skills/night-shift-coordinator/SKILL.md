@@ -28,6 +28,7 @@ Open the Night Shift Log and do its reads **before** you sequence anything. Read
 Task Progress:
 - [ ] Read .night-shift/routines.md and each repository's .night-shift/config.md
 - [ ] Open the Night Shift Log and resolve the practice and every tracked repository
+- [ ] If the log is unreachable, send a push notification before dispatching anything
 - [ ] Start one sweep per repository
 - [ ] Read the corrections and the previous sweep's considerations
 - [ ] Run the claim check on every labelled issue
@@ -35,6 +36,7 @@ Task Progress:
 - [ ] Dispatch bottom to top, recording each fire
 - [ ] Record every consideration, dispatch and skip
 - [ ] Close the Night Shift Log console, whatever the outcome
+- [ ] If the log was unreachable, push-notify every unrecorded dispatch, issue number and session id
 - [ ] Report what you considered, dispatched and skipped, and your budget
 ```
 

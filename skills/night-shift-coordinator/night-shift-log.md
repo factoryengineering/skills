@@ -56,9 +56,21 @@ let { $sweep as $sweepA } = call startSweep($repository, $headCommit)
 
 **If every candidate is dirty the pool is genuinely exhausted, and that is still not an outage.** Do the hosting-platform work, and report the run unrecorded naming a full console pool as the reason. The two read alike in a report and have different remedies: a full pool was caused by earlier runs that did not close their consoles, and an outage belongs to whoever owns the connector.
 
+## When the log is unreachable
+
+**Unreachable means the server cannot be reached at all**, and it has exactly two shapes: its tools are absent from the session, or its connector reports that it needs authorization. A `console_limit` refusal is neither, because the server answered; a full pool is the section above, and so is a pool in which every candidate is dirty.
+
+**Do the hosting-platform work anyway.** A missing log entry is a gap; a blocked run is a worse one.
+
+**Then raise it where a person will see it the same day.** Send a push notification as well as saying it in your final report. A scheduled routine's final report lives in a session transcript that nobody reads by default, which is how a connector that had lost its authorization cost two consecutive unrecorded nights before anyone noticed. The notification names the repository, this session, and that the run is unrecorded.
+
+**Send it before your first dispatch, not at the end.** An unrecorded `Dispatch` cannot be resolved by anything that later looks one up, so every worker you fire past this point stops for a reason its own transcript cannot explain, and each one reads as a separate mystery to whoever opens it. A reader who checks the log for the sweep finds none and concludes the issue was never dispatched. The notification is what joins them, and it is worth nothing after the night is over.
+
+**Then send a second one when the sweep ends, listing every dispatch you fired while unrecorded**, each with its issue number and the session id the fire returned. Your final report carries that same list. It is the only record those dispatches have, and it is what lets a person record them afterwards or re-fire them. A push notification is one short line, so where the pairs will not fit in one, **send several rather than dropping the ids**, numbered `1/3`, `2/3` so a batch that arrives incomplete is visible as incomplete. An outage is rare by construction, and a handful of notifications on such a night costs less than a person who cannot re-fire without first finding a transcript.
+
 ## Rules about what goes in
 
 - **Record what you skipped, not just what you dispatched.** A skip with its reason is the evidence the claim rule is working, and it is the only record that an issue was looked at at all.
 - **Never record availability.** The hosting platform is the queue and the only authority on what is currently ready. The log holds what was observed and decided, and when. Storing "this issue is available" would create a second source of truth that can go stale, which is the exact failure the claim rule exists to catch.
 - **Write a rationale you can support.** A rationale is your own account, so quote a rule only after reading it, and name the file it comes from. A confident paraphrase of a rule that does not exist reads as evidence to every later run.
-- **If the server is unreachable, do the hosting-platform work anyway** and say in your final report that the run went unrecorded. A missing log entry is a gap; a blocked run is a worse one. **A `console_limit` refusal is not unreachability**: the server answered, and the section above says what to do with the answer.
+- **If the server is unreachable, do the hosting-platform work anyway**, and raise the outage the same day rather than only in your final report. *When the log is unreachable* above says what counts as unreachable and what raising it takes.
