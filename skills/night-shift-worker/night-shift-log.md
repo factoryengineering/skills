@@ -50,12 +50,22 @@ let { $pullRequest as $pr } = call openPullRequest($dispatch, 123, "Bounded the 
 
 **If every candidate is dirty the pool is genuinely exhausted, and that is still not an outage.** Do the hosting-platform work, and report the run unrecorded naming a full console pool as the reason. The two read alike in a report and have different remedies: a full pool was caused by earlier runs that did not close their consoles, and an outage belongs to whoever owns the connector.
 
+## When the log is unreachable
+
+**Unreachable means the server cannot be reached at all**, and it has exactly two shapes: its tools are absent from the session, or its connector reports that it needs authorization. A `console_limit` refusal is neither, because the server answered; a full pool is the section above, and so is a pool in which every candidate is dirty.
+
+**Do the hosting-platform work anyway.** A missing log entry is a gap; a blocked run is a worse one.
+
+**Then raise it where a person will see it the same day.** Send a push notification as well as saying it in your final report. A scheduled routine's final report lives in a session transcript that nobody reads by default, which is how a connector that had lost its authorization cost two consecutive unrecorded nights before anyone noticed. The notification names the repository, this session, and that the run is unrecorded.
+
+**Send it before you stop.** Your outcome attaches to a `Dispatch` that may itself be unrecorded, in which case there is nothing to attach to and no trace that this dispatch produced anything. Name the pull request you opened, the question you recorded, or the no-change you found, so the artifact can be found without the log.
+
 ## Four rules about what goes in
 
 - **Never record availability.** The hosting platform is the queue and the only authority on what is currently ready. The log holds what was observed and decided, and when. Storing "this issue is available" would create a second source of truth that can go stale, which is the exact failure the claim rule exists to catch.
 - **Write a rationale you can support.** A rationale is your own account, so quote a rule only after reading it, and name the file it comes from. A confident paraphrase of a rule that does not exist reads as evidence to every later run.
 - **Summarize the change, not its evidence.** The `openPullRequest` summary says what changed and why, as the example above does. Restating the pull request's evidence makes a second copy that drifts from the first, and one run's pull request body and log summary disagreed on a single count before anyone read either. Anything evidential that does appear follows *Write what stays true* in `SKILL.md`.
-- **If the server is unreachable, do the hosting-platform work anyway** and say in your final report that the run went unrecorded. A missing log entry is a gap; a blocked run is a worse one. **A `console_limit` refusal is not unreachability**: the server answered, and the section above says what to do with the answer.
+- **If the server is unreachable, do the hosting-platform work anyway**, and raise the outage the same day rather than only in your final report. *When the log is unreachable* above says what counts as unreachable and what raising it takes.
 
 ## Nothing to fix is a result
 

@@ -35,6 +35,7 @@ Task Progress:
 - [ ] Dispatch bottom to top, recording each fire
 - [ ] Record every consideration, dispatch and skip
 - [ ] Close the Night Shift Log console, whatever the outcome
+- [ ] If the log was unreachable, notify, and list the dispatches that went unrecorded
 - [ ] Report what you considered, dispatched and skipped, and your budget
 ```
 

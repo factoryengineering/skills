@@ -74,6 +74,7 @@ Task Progress:
 - [ ] One review round, then stop
 - [ ] Record the outcome, whatever it was
 - [ ] Close the Night Shift Log console, before anything that can stop the run
+- [ ] If the log was unreachable, notify before stopping
 - [ ] Run the config's `## After the pull request`
 ```
 
