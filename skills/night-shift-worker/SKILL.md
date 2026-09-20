@@ -73,6 +73,7 @@ Task Progress:
 - [ ] Confirm CI ran on this layer, by its `event`
 - [ ] One review round, then stop
 - [ ] Record the outcome, then run `## After the pull request`
+- [ ] Close the Night Shift Log console, whatever the outcome
 ```
 
 The container may hand you a working tree whose `origin/*` refs are older than the tree itself. Run `git fetch origin` before you read any remote ref, and never conclude that a branch or a file is missing from a ref you have not just fetched.
@@ -167,7 +168,7 @@ A review comment is a claim, not a verdict. Verify it against the repository bef
 
 ## Record the run
 
-Every outcome goes in the Night Shift Log, including "nothing to fix". Read **[night-shift-log.md](night-shift-log.md)**.
+Every outcome goes in the Night Shift Log, including "nothing to fix", and **every run closes the console it opened**, including one that stopped before it got here. Read **[night-shift-log.md](night-shift-log.md)**.
 
 Then run the config's `## After the pull request`. A value of `none` means there is nothing to do; an absent heading means stop.
 

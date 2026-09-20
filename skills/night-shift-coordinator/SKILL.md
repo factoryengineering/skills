@@ -27,7 +27,7 @@ Open the Night Shift Log and do its reads **before** you sequence anything. Read
 ```
 Task Progress:
 - [ ] Read .night-shift/routines.md and each repository's .night-shift/config.md
-- [ ] Resolve the practice and every tracked repository in the log
+- [ ] Open the Night Shift Log and resolve the practice and every tracked repository
 - [ ] Start one sweep per repository
 - [ ] Read the corrections and the previous sweep's considerations
 - [ ] Run the claim check on every labelled issue
@@ -35,6 +35,7 @@ Task Progress:
 - [ ] Dispatch bottom to top, recording each fire
 - [ ] Record every consideration, dispatch and skip
 - [ ] Report what you considered, dispatched and skipped, and your budget
+- [ ] Close the Night Shift Log console, whatever the outcome
 ```
 
 ---
@@ -104,7 +105,7 @@ Fire one session per issue, bottom to top within a chain. Read **[dispatching.md
 
 ## Record the sweep
 
-Every issue you looked at gets a record, including the ones you passed over. Read **[night-shift-log.md](night-shift-log.md)**.
+Every issue you looked at gets a record, including the ones you passed over, and **every sweep closes the console it opened**, including one that stopped before it got here. Read **[night-shift-log.md](night-shift-log.md)**.
 
 ---
 
