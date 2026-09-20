@@ -53,7 +53,7 @@ The label alone does not mean an issue is available. **The work artifacts are th
 
 | What you find | What it means | What to do |
 |---|---|---|
-| An **open** pull request | Someone is already working it | Skip. Do not start a second session on it. |
+| An **open** pull request | A session claimed it, and may or may not still be working it | Dispatch. The worker's duplicate check owns the decision. |
 | A **merged** pull request | A fix already landed | Dispatch a **verification**, not a fix. The worker owns the procedure. |
 | A **closed, unmerged** pull request | An attempt was abandoned | Say so in the dispatch. It usually records why. |
 | An unmerged branch with no pull request | Work in progress, or abandoned | Say so in the dispatch. Build on it rather than starting over. |
@@ -68,7 +68,9 @@ A pull request claims an issue when either of these holds.
 
 A bare number anywhere else in a title or a body is prose, and it does not claim the issue. A pull request that explains a precedent, links a related decision, or quotes a dispatch names issues it is not working, and often names them precisely to say they are *not* done yet.
 
-**Both wrong rows are quiet ones.** A mention on an open pull request reads as someone already working it, and the sweep records a skip that reads like a considered decision. A mention on a merged one reads as a fix that already landed, and the next session is dispatched to verify work nobody has written. Neither fails and neither goes red, unlike the `merged` defect below, which at least surfaces as a session re-fixing shipped code.
+**The open row does not skip.** A pull request stays open after its session stops, so a skip on sight strands every issue whose first attempt left acceptance unmet, and nothing the sweep can read tells a session that is working from one that finished. The worker can, because it reads the branch diff against the acceptance, so that decision lives there and lives only there. A dispatch that turns out to be a duplicate costs one short session; a skip that turns out to be wrong costs the issue.
+
+**Both wrong rows are quiet ones.** A mention on an open pull request sends a session at a pull request that is not working the issue at all, and it no-ops against work it should never have been pointed at. A mention on a merged one reads as a fix that already landed, and the next session is dispatched to verify work nobody has written. Neither fails and neither goes red, unlike the `merged` defect below, which at least surfaces as a session re-fixing shipped code.
 
 **The search is the source. The timeline is not.** Editing a body clears the search, but the cross-reference event stays on the issue's timeline permanently, so a timeline read still reports a claim from a pull request that no longer mentions the issue, and no edit withdraws it. Run the search.
 

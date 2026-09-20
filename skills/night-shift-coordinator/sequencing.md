@@ -31,7 +31,7 @@ Never dispatch an issue whose lower neighbour is in none of these. Skip it, and 
 2. **Being dispatched in this same sweep.** The upper worker resolves the branch by pattern and waits for it.
 3. **Carrying an unmerged branch, whether or not a pull request on it is still open.** This is the strongest of the three, because the branch already exists and the upper worker never waits at all.
 
-**Do not confuse the claim check with the dependency check.** An open pull request on an issue means do not dispatch *that* issue a second time. It says nothing about the issue above it, which is released to stack rather than blocked.
+**Do not confuse the claim check with the dependency check.** An open pull request on an issue says only that a session claimed it, and the worker decides what that is worth. It says nothing about the issue above it, which is released to stack rather than blocked.
 
 ## How much to take
 
