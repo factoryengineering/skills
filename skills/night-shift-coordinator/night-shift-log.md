@@ -66,7 +66,7 @@ let { $sweep as $sweepA } = call startSweep($repository, $headCommit)
 
 **Send it before your first dispatch, not at the end.** An unrecorded `Dispatch` cannot be resolved by anything that later looks one up, so every worker you fire past this point stops for a reason its own transcript cannot explain, and each one reads as a separate mystery to whoever opens it. A reader who checks the log for the sweep finds none and concludes the issue was never dispatched. The notification is what joins them, and it is worth nothing after the night is over.
 
-**Then send a second one when the sweep ends, listing every dispatch you fired while unrecorded**, each with its issue number and the session id the fire returned. Your final report carries that same list. It is the only record those dispatches have, and it is what lets a person record them afterwards or re-fire them. A push notification is one short line, so where the list will not fit, carry the count and the issue numbers and leave the session ids to the report.
+**Then send a second one when the sweep ends, listing every dispatch you fired while unrecorded**, each with its issue number and the session id the fire returned. Your final report carries that same list. It is the only record those dispatches have, and it is what lets a person record them afterwards or re-fire them. A push notification is one short line, so where the pairs will not fit in one, **send several rather than dropping the ids**, numbered `1/3`, `2/3` so a batch that arrives incomplete is visible as incomplete. An outage is rare by construction, and a handful of notifications on such a night costs less than a person who cannot re-fire without first finding a transcript.
 
 ## Rules about what goes in
 
