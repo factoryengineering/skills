@@ -68,6 +68,8 @@ let { $sweep as $sweepA } = call startSweep($repository, $headCommit)
 
 **Then send a second one when the sweep ends, listing every dispatch you fired while unrecorded**, each with its issue number and the session id the fire returned. Your final report carries that same list. It is the only record those dispatches have, and it is what lets a person record them afterwards or re-fire them. A push notification is one short line, so where the pairs will not fit in one, **send several rather than dropping the ids**, numbered `1/3`, `2/3` so a batch that arrives incomplete is visible as incomplete. An outage is rare by construction, and a handful of notifications on such a night costs less than a person who cannot re-fire without first finding a transcript.
 
+**If you have no push-notification tool, the job that runs you raises the outage instead.** A coordinator run as a scheduled job outside a Claude session has no such tool. Its job checks the log before you start: if the log is unreachable, it opens an issue before you run and fails when you finish (`night-shift-setup` describes this). Your part is the report, which the job publishes where a person reads it. Open it by saying the run is unrecorded, and list every dispatch you fired while unrecorded, each with its issue number and session id. Do not spend the run looking for a tool you were not given.
+
 ## Rules about what goes in
 
 - **Record what you skipped, not just what you dispatched.** A skip with its reason is the evidence the claim rule is working, and it is the only record that an issue was looked at at all.

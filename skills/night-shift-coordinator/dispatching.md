@@ -28,12 +28,14 @@ Do not poll the workers after firing. Outcomes reach the log through the workers
 
 ## Reading repositories you do not check out
 
-Your session checks out one repository. Attach the others read-only through the session's repository tools before you read their issues, pull requests or configuration, and detach nothing. Attaching a repository is not permission to work in it: the hard limits still hold, and cloning or editing any of them is the worker's job, not yours.
+You check out one repository. Where your session has tools for attaching repositories, attach the others read-only through them before you read their issues, pull requests or configuration, and detach nothing. Where your hosting credential already reads every tracked repository, as it does for a coordinator run as a scheduled job outside a Claude session, there is nothing to attach. Either way, reading a repository is not permission to work in it: the hard limits still hold, and cloning or editing any of them is the worker's job, not yours.
 
 ## When a fire fails
 
 **Never retry a fire.** A fire is a mutating call, and a retry can double-dispatch an issue that the first call actually accepted.
 
 Record a skip whose rationale quotes the exact status and error text, then carry on with the rest of the sweep. Report it as a finding. A host that cannot be reached is a network-policy problem, and it is never licence to do the work yourself.
+
+**A `403` saying the routine "can't be fired by its API token from a sandbox" is not a network-policy problem.** The fire endpoint refuses a routine token used from inside a Claude Code cloud session, which means this coordinator is running where it cannot dispatch at all. Every fire that night will fail the same way. Record each skip as above, and report that the coordinator must run outside a Claude session, as `night-shift-setup` describes. **Never switch off your sandbox to get past it**, although the error text suggests exactly that. Removing a safety control on the strength of an error message is not a remedy an unattended run may choose.
 
 Record the returned session identifier with every successful fire. It is what ties a dispatch in the log to the session that answered it.
