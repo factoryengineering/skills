@@ -106,14 +106,14 @@ It needs three credentials.
 
 **Each worker's fire token**, under the names in the routine table.
 
-Give the coordinator's Claude Code session only the tools it reads and fires with: the hosting tools in read-only mode, the log's tools, and a shell for the fire call. It has no repositories to attach, because its credential already reads all of them.
+Allow the coordinator only the tools it reads and fires with, through headless Claude Code's allowed-tools list: the hosting tools in read-only mode, the log's tools, and a shell for the fire call. It has no repositories to attach, because its credential already reads all of them.
 
 ## Raising an unreachable log
 
 The coordinator skill requires an unreachable log to be raised where a person sees it the same day, before the first dispatch. A Claude session does that with its push-notification tool. A coordinator outside a Claude session has no such tool, so the job raises it instead:
 
 1. **Before the sweep, ask the log's server whether the credential works.** Send its MCP endpoint an `initialize` request with the token. Anything but `200` means unreachable: `401` is an expired or revoked sign-in, and anything else is an outage. Do not judge by the stored expiry alone, or a revoked sign-in passes as a valid one.
-2. **If it is unreachable, leave the log's server out of the session's MCP configuration.** The coordinator then finds its tools absent, which is the skill's own definition of unreachable, and does the hosting-platform work anyway.
+2. **If it is unreachable, leave the log's server out of the coordinator's MCP configuration.** The coordinator then finds its tools absent, which is the skill's own definition of unreachable, and does the hosting-platform work anyway.
 3. **Open an issue in the coordinator's repository before the coordinator runs**, so the notice exists before any dispatch.
 4. **Fail the job at the end**, so the host's own failure alert reaches a person.
 
