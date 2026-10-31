@@ -61,7 +61,7 @@ skills/
 │   ├── SKILL.md                          # Skill definition
 │   ├── creating-the-log.md               # Publishing the seed, practice and repository ceremony
 │   ├── configuring-a-repository.md       # The eight required headings, with an example
-│   ├── creating-the-routines.md          # Scheduled sessions and their loader prompts
+│   ├── creating-the-routines.md          # The coordinator's job, the worker sessions, their prompts
 │   └── log-model.factual                 # The log's definitions and manifest, in four batches
 ├── night-shift-coordinator/
 │   ├── SKILL.md                          # Skill definition
