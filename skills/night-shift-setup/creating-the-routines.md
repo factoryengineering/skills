@@ -59,11 +59,7 @@ Then follow the night-shift-coordinator skill exactly. That skill is the
 protocol. This prompt is not: where the two disagree, the skill wins, and say
 so in your report.
 
-Budget: <n> dispatches per night, across all repositories. State this number in
-every skip rationale that leans on it, and in your report.
-
-Do not poll the workers. End your turn once every fire has returned and been
-recorded, and report what you dispatched, what you skipped and why.
+Budget: <n> dispatches per night, across all repositories.
 ```
 
 **Worker:**
@@ -79,7 +75,7 @@ night-shift-worker skill exactly. That skill is the protocol. This prompt is
 not: where the two disagree, the skill wins, and say so in your report.
 ```
 
-The budget belongs in the coordinator's prompt rather than in the skill, because it is an operator's choice about one night's capacity and not a property of the protocol. The skill's part is to require that the number be stated wherever a skip leans on it.
+The budget belongs in the coordinator's prompt rather than in the skill, because it is an operator's choice about one night's capacity and not a property of the protocol. The skill's part is to require that the number be stated in the report and wherever a skip leans on it (`night-shift-coordinator`, under **How much to take**), so the prompt gives the number and its scope, and nothing else.
 
 **State the budget per night, never per sweep.** The log records one sweep per repository, so "per sweep" can be read as a separate budget for each repository. A coordinator that reads it that way can dispatch several times what you meant.
 
