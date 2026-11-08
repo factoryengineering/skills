@@ -23,7 +23,7 @@ Every heading in the table below is required.
 | `## Read first` | Which files a worker must read before touching an issue. One repository points at a build guide, another at an accepted specification, another at nothing. |
 | `## Authority` | The documents an issue must answer to, and what citing each one means. `refining-issues` runs R4 against this and nothing else. It is not derivable: which document governs, and whether citing it means naming a section or citing a principle, is a decision about how the project is run. `none` is a complete answer, and it makes R4 vacuous rather than failed. |
 | `## Before you fix` | Where "reproduce first" is replaced by something else, such as conformance criteria a change is held to. |
-| `## Verification commands` | The exact commands, in order, that must be green before every push. |
+| `## Verification commands` | The exact commands, in order, that must be green before every push. They must run the same with or without the worker's work credentials present, so unset any such credential in the command itself, as in `env -u MEASURE_KEY npm test`. See remedy 1 under *Why the coordinator is not a routine* in [creating-the-routines.md](creating-the-routines.md). |
 | `## CI workflow` | The workflow *file* that gates the merge. Deriving it means parsing every workflow in the repository at whatever hour the run wakes. |
 | `## After the pull request` | Post-pull-request hooks. This is the heading the rule exists for: `none` says a person decided there is nothing, while absence says nobody looked. |
 | `## What is different about this repository` | Free prose for anything the protocol does not fix. `Nothing.` is a complete answer. |
