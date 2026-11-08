@@ -15,7 +15,7 @@ A rationale in the log is the record of what a run decided. It is not a citation
 
 A chain that forked after dispatch, so that two layers base on one branch, is noticed only by its workers, and each of them can only say so in its own pull request body. Nothing reads those bodies but a person. Run this check once per repository, so that the fork reaches a person through your report.
 
-1. **List the open pull requests whose base branch matches the repository's worker branch pattern**, `claude/issue-<number>-*` unless its config's `## Branch prefix` says otherwise. Every open layer above the bottom of a chain bases on another worker's branch.
+1. **List the open pull requests whose base branch matches the worker branch pattern**, `claude/issue-<number>-*`. Every open layer above the bottom of a chain bases on another worker's branch.
 2. **Group them by base branch.**
 3. **A base carrying two or more open pull requests is a forked chain**, because one chain gives each base only one layer above it.
 4. **Put each forked chain in your report.** Name the base branch and the issue it belongs to, and each pull request on it with its own issue.
