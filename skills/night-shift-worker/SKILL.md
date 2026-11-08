@@ -108,7 +108,7 @@ When a merged pull request already covers the issue, your job changes from fix t
 
 Branch name: `claude/issue-<number>-<slug>`, unless the config's optional `## Branch prefix` says otherwise. The session harness may assign a branch of its own. Create this one instead and push only this one, because stacking and the claim check find a worker's branch by its issue number and a harness name carries none. Following this name is the protocol, so the pull request does not report it as a deviation.
 
-With no stacking clause, branch from `origin/main` after fetching. When the dispatch names a lower issue, branch from **that issue's branch** and set it as your pull request base. Read **[stacking.md](stacking.md)** for how to resolve a branch that is absent or missing work your issue needs, how to register the chain, and how to confirm CI actually ran on your layer.
+With no stacking clause, branch from the repository's default branch on `origin` after fetching. When the dispatch names a lower issue, branch from **that issue's branch** and set it as your pull request base. Read **[stacking.md](stacking.md)** for how to resolve a branch that is absent or missing work your issue needs, how to register the chain, and how to confirm CI actually ran on your layer.
 
 **Never fall back to `main`** when a lower layer's branch is absent. Branching from `main` while that work is missing renders it as deletions in your diff, which reads as a revert and passes review by looking small.
 
