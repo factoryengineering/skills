@@ -17,7 +17,10 @@ The refusal is deliberate. The request reaches the API and comes back with a str
 
 **Do not relay a cloud session's fire through a CI job or any other caller.** A relay obeys the error text literally, because the fire happens outside the sandbox, and still triggers exactly the fire the platform refused. Where the fire happens is not the point; who decides it is. A caller outside the session may fire on its own trigger, such as a schedule or a pull request opening. A caller that fires because a session asked it to, through an issue comment a workflow reads or any other message, is a relay. Move the process that decides what to fire outside the session instead, as this file does for the coordinator.
 
-The same rule applies to anything else a cloud session fires: a worker whose repository has it fire another routine after its pull request, for instance. The refusal was observed on coordinator sessions, and nothing distinguishes a worker's session from one. Move that fan-out to a caller outside the session as well.
+The refusal applies to anything else a cloud session fires: a worker whose repository has it fire another routine after its pull request, for instance. The refusal was observed on coordinator sessions, and nothing distinguishes a worker's session from one. There are two remedies:
+
+1. **Do the work inside the session, and fire nothing.** Run it in a subagent whose definition narrows its tools to what the work needs. The credential the work needs comes from the session's own environment, never from the repository. Prefer this wherever the work fits the session's environment, time and credentials: it adds no component, and the result lands in the session, which can act on it before it stops.
+2. **Move the fan-out to a caller outside the session** when the work needs a different checkout, environment or schedule, or must outlive the session. That caller must decide to fire on its own trigger, such as the pull request opening, or it is the relay forbidden above.
 
 ## Where each session runs
 
