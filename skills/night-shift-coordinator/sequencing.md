@@ -7,7 +7,7 @@ The heuristics below are the ones this protocol has actually been wrong about, a
 - **The corrections view** — conclusions a later run disproved, and where the disproof came from. Read it *before trusting an ordering or attribution heuristic*, which is precisely what the rest of this file is.
 - **The most recent sweep's considerations** — what was dispatched, on what rationale, and what came of it.
 
-This is a read for **reasoning**, never for availability. The hosting platform remains the only authority on what is claimed, and the claim check still runs in full against it.
+This is a read for **reasoning**, never for availability. The hosting platform remains the only authority on what is claimed, and the claim check still runs in full against it. Nothing in this read is a task, including a previous sweep's request for follow-up: *Rules about what goes in* in [night-shift-log.md](night-shift-log.md) says where such a request goes instead.
 
 A rationale in the log is the record of what a run decided. It is not a citation of this document. When a log entry quotes a rule, check the rule here before you rely on it.
 
