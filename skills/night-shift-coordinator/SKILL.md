@@ -32,6 +32,7 @@ Open the Night Shift Log and do its reads **before** you sequence anything. Read
 Task Progress:
 - [ ] Read .night-shift/routines.md and each repository's .night-shift/config.md
 - [ ] Open the Night Shift Log and resolve the practice and every tracked repository
+- [ ] Read the instant this run began, once, for every repository's `nightOf`
 - [ ] If the log is unreachable, send a push notification before dispatching anything, where you have the tool
 - [ ] Phase 1, for each repository in turn: start its sweep
 - [ ] Phase 1: read the corrections and that repository's previous sweep
@@ -45,6 +46,8 @@ Task Progress:
 - [ ] If the log was unreachable, push-notify every unrecorded dispatch, issue number and session id, or list them at the top of your report where you have no push-notification tool
 - [ ] Report what you considered, dispatched and skipped, and your budget
 ```
+
+**Your report has one reader: the person who runs `night-shift-review` the next morning.** It is the only place a forked chain, a repeated no-op, a failed fire, or a night's unrecorded dispatches reach anyone, because the log holds none of them. Write each one so that person can act on it without opening your transcript: the repository, the issue, the pull request, and what ends it.
 
 ---
 
