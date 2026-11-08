@@ -11,6 +11,19 @@ This is a read for **reasoning**, never for availability. The hosting platform r
 
 A rationale in the log is the record of what a run decided. It is not a citation of this document. When a log entry quotes a rule, check the rule here before you rely on it.
 
+## Report a forked chain
+
+A chain that forked after dispatch, so that two layers base on one branch, is noticed only by its workers, and each of them can only say so in its own pull request body. Nothing reads those bodies but a person. Run this check once per repository, so that the fork reaches a person through your report.
+
+1. **List the open pull requests whose base branch matches `claude/issue-*-*`.** Every open layer above the bottom of a chain bases on another worker's branch.
+2. **Group them by base branch.**
+3. **A base carrying two or more open pull requests is a forked chain**, because one chain gives each base only one layer above it.
+4. **Put each forked chain in your report.** Name the base branch and the issue it belongs to, and each pull request on it with its own issue.
+
+The check reads the hosting API and nothing else. The log cannot answer it, because a dispatch records a branch glob and no lower issue. **Do not comment on the pull requests, and do not try to repair the fork.** Your credential is read-only, so the host would refuse the comment, and the repair is a person's job.
+
+Once a lower layer merges, the layers above it are retargeted, so a fork shows only while its base branch is unmerged. Report what is open tonight, and report the same fork again on every night it is still visible.
+
 ## Grouping
 
 Group the available issues by the files they touch and by the dependencies they declare. Issues touching the same files are not independent, and dispatching them side by side from `main` produces conflicting patches for one root cause.
