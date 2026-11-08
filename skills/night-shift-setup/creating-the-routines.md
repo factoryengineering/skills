@@ -91,6 +91,22 @@ The job runs the coordinator prompt through headless Claude Code (`claude -p`) o
 - **The pin in the job's definition is the only record of those versions.** Do not list them again beside the skills' upstream commits. A second list is a copy that can drift from the pin.
 - **An upgrade is a change of its own**, made after reading the release notes, as with a skill update.
 
+**Never let two runs of the job overlap.** The coordinator skill forbids dispatching one issue twice in a sweep, but two sweeps at once each read the queue before the other records a dispatch, find the same issues available, and fire them all. A run started by hand while the scheduled one is still going does this, and so does a scheduled run that starts late or runs long.
+- **Queue a second run; do not cancel the first.** A run that is cancelled partway through firing workers leaves dispatches made and unrecorded.
+- **Set a timeout on the job**, so a stuck run releases the group and the queued run can start.
+
+On GitHub Actions:
+
+```yaml
+concurrency:
+  group: night-shift-coordinator
+  cancel-in-progress: false
+
+jobs:
+  coordinator:
+    timeout-minutes: 60
+```
+
 It needs three credentials.
 
 **A read-only hosting credential covering every tracked repository.**
