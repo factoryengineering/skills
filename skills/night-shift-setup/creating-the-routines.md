@@ -59,7 +59,7 @@ The coordinator's repository carries `.night-shift/routines.md`. It has one row 
 - the name of its token
 - its schedule
 
-The coordinator's row names the job that runs it in place of a routine identifier.
+The coordinator's row names the job that runs it in place of a routine identifier, and **where the job publishes the coordinator's final report**, such as the workflow whose run summary carries it. `night-shift-review` reads that report each morning, and it is the only place a forked chain, a repeated no-op, a failed fire or an unrecorded dispatch reaches a person. A report published somewhere the review has to guess at is a report nobody reads.
 
 One table, not two. The coordinator reads the worker rows to know what to fire; a person reads every row to know what exists. Storing a session identifier in two places is how the two fall out of step. A job that needs the list of tracked repositories, to scope a credential for example, should read it from the worker rows rather than keep its own.
 
@@ -245,7 +245,7 @@ The coordinator skill requires an unreachable log to be raised where a person se
 3. **Open an issue in the coordinator's repository before the coordinator runs**, so the notice exists before any dispatch. Use the job's notice credential, never one the coordinator holds.
 4. **Fail the job at the end**, so the host's own failure alert reaches a person.
 
-Publish the coordinator's final report somewhere a person reads, such as the run's summary page. On a night the log was unreachable, that report holds the only list of the night's dispatches.
+Publish the coordinator's final report somewhere a person reads, such as the run's summary page, and name that place in the coordinator's row of `.night-shift/routines.md` (*The routine table*, above). On a night the log was unreachable, that report holds the only list of the night's dispatches.
 
 Workers remain Claude sessions, and need the push-notification tool on their allowed-tools list as before. A session sends that notification itself, so it does not depend on the routine's own completion-notification setting. **That last point is read from the tool contracts and has not been confirmed against a live run**, so confirm it on a worker's first run.
 

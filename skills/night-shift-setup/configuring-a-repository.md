@@ -1,6 +1,6 @@
 # Configuring a tracked repository
 
-Every tracked repository carries `.night-shift/config.md` at its root. The worker reads it from its checkout; the coordinator reads the same file over the hosting API; `refining-issues` reads it before it audits anything. There is one copy, in the repository it describes, so the roles cannot disagree about it.
+Every tracked repository carries `.night-shift/config.md` at its root. The worker reads it from its checkout; the coordinator reads the same file over the hosting API; `refining-issues` reads it before it audits anything; `night-shift-review` reads it over the hosting API to know the bar each pull request was held to. There is one copy, in the repository it describes, so the roles cannot disagree about it.
 
 It sits outside `.claude/skills/`, so reinstalling a skill cannot clobber it, and outside `.claude/` entirely, because that directory is agent-harness configuration and this is protocol configuration a person maintains.
 
@@ -48,8 +48,8 @@ Four values a reader might expect. Each is derivable, and a stored copy can only
 ````markdown
 # Night shift configuration
 
-The `night-shift-worker`, `night-shift-coordinator`, and `refining-issues`
-skills read this file. Every `##` heading below is required. A missing
+The `night-shift-worker`, `night-shift-coordinator`, `night-shift-review`
+and `refining-issues` skills read this file. Every `##` heading below is required. A missing
 heading is an error, not a default: stop and name the heading you could not
 find. Anything that is not one of these headings is protocol, and protocol
 lives in the skill.

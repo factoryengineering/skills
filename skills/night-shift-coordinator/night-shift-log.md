@@ -8,21 +8,29 @@ This file is mechanics. The log is not an epilogue: you open it before the claim
 
 ## The whole shape, for orientation
 
-You perform steps 1 to 5. The worker performs 6 and 7, in its own session, after yours has ended.
+You perform steps 1 to 5. The worker performs 6, in its own session, after yours has ended. A person performs 7 in the morning, through `night-shift-review`.
 
-1. **`practicesForAdministrator`** — the entry point, before the claim check. Find the repository whose current name matches the one you are sweeping and take its reference.
-2. **`startSweep`** — once per repository, before examining anything.
+1. **`practicesForAdministrator`** — the entry point, before the claim check. Find the repository whose current name matches the one you are sweeping and take its reference, and take the practice's reference too.
+2. **`startNightlySweep`** — once per repository, before examining anything. *File the sweep under tonight's night*, below, says what to pass.
 3. **The corrections view, and the previous sweep's considerations** by way of the sweeps view, before you sequence.
 4. **`considerIssue`**, then exactly one finding action, matching what the claim check turned up.
 5. **`dispatchWork` or `skipIssue`.** Creating the fact *is* the decision; there is no decision value to set.
 6. `openPullRequest`, `raiseQuestion`, or `findNoChange`. *(worker)*
-7. `answerQuestion`, or `correctVerdictFromWork`. *(worker, later)*
+7. `answerQuestion`, or `correctVerdict`. *(a person, in the morning review)*
 
 ## Setup is not your job, and calling it is destructive
 
 If no practice exists, or no repository in it matches the one you are sweeping, **stop and say so.** Creating a practice and registering a repository are one-time setup owned by `night-shift-setup`, and calling either speculatively mints a duplicate that splits the history across two records nothing joins.
 
 More than one match is also a stop. Two practices, or two repositories carrying one name, mean an earlier setup ran twice, and guessing which to use writes this sweep into whichever you picked.
+
+## File the sweep under tonight's night
+
+**Read the instant your run began once, before the first `startNightlySweep`, and pass that same value as `nightOf` for every repository.** The log files each sweep under a **Night**, one per practice per UTC date, and the morning review starts from the night rather than from every sweep ever recorded. A run that read the clock afresh for each repository would split itself across two nights whenever it crossed midnight UTC, and the review reading one of them would see half the run.
+
+Write the instant with its offset, such as `2026-11-09T04:10:00Z`. A date-time with no offset names a different instant in every time zone, and the log refuses it.
+
+**Never fall back to `startSweep`.** It still exists, so that a copy of this skill installed before the Night existed keeps recording, but a sweep it starts belongs to no night and is invisible to the morning review. If `startNightlySweep` is not in the log, the log predates the upgrade in `night-shift-setup`'s `creating-the-log.md`: stop before sweeping and say so, as you would for a missing practice. A night the review cannot see is worse than a night that did not run, because a person reads the second as a miss and the first as a quiet night.
 
 ## The branch on a dispatch is a glob
 
@@ -75,5 +83,5 @@ let { $sweep as $sweepA } = call startSweep($repository, $headCommit)
 - **Record what you skipped, not just what you dispatched.** A skip with its reason is the evidence the claim rule is working, and it is the only record that an issue was looked at at all.
 - **Never record availability.** The hosting platform is the queue and the only authority on what is currently ready. The log holds what was observed and decided, and when. Storing "this issue is available" would create a second source of truth that can go stale, which is the exact failure the claim rule exists to catch.
 - **Write a rationale you can support.** A rationale is your own account, so quote a rule only after reading it, and name the file it comes from. A confident paraphrase of a rule that does not exist reads as evidence to every later run.
-- **A sweep owes nothing to a later sweep beyond its records.** Do not leave tasks for the next run, and do not take up one a previous run left. A finding that needs follow-up goes in your report, for a person. A finding that shows the protocol is wrong goes in a correction, and a correction settles a question rather than opening one.
+- **A sweep owes nothing to a later sweep beyond its records.** Do not leave tasks for the next run, and do not take up one a previous run left. A finding that needs follow-up goes in your report, for the person who runs `night-shift-review` in the morning. A finding that shows the protocol is wrong goes in a correction, and a correction settles a question rather than opening one.
 - **If the server is unreachable, do the hosting-platform work anyway**, and raise the outage the same day rather than only in your final report. *When the log is unreachable* above says what counts as unreachable and what raising it takes.
