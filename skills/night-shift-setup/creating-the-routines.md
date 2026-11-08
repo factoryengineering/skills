@@ -20,6 +20,13 @@ The refusal is deliberate. The request reaches the API and comes back with a str
 The refusal applies to anything else a cloud session fires: a worker whose repository has it fire another routine after its pull request, for instance. The refusal was observed on coordinator sessions, and nothing distinguishes a worker's session from one. There are two remedies:
 
 1. **Do the work inside the session, and fire nothing.** Run it in a subagent whose definition narrows its tools to what the work needs. The credential the work needs comes from the session's own environment, never from the repository. Prefer this wherever the work fits the session's environment, time and credentials: it adds no component, and the result lands in the session, which can act on it before it stops.
+
+   **That credential reaches every process the session runs, not only the subagent.** A cloud environment's variables become ordinary environment variables that any command in the session can read. As of 2026-11-08, a subagent's definition has no way to hold a credential of its own. A network secret keeps the value off the session's machine, but the proxy adds it to every request to its host, so it does not stop a test from making a paid call either. Before you add a credential to a worker's environment:
+   - **Find the code that would pick it up without being asked**, such as tests, scripts, and the commands under `## Verification commands`.
+   - **Make that code require an explicit opt-in**: a flag the subagent passes on its own command line. The credential's presence alone must trigger nothing.
+   - **Unset it in the verification commands themselves**, as `configuring-a-repository.md` requires, so a test that misses the opt-in still cannot reach it.
+
+   Where the work cannot be made to opt in, take remedy 2, with a routine and environment of its own, so the worker's environment never holds the credential.
 2. **Move the fan-out to a caller outside the session** when the work needs a different checkout, environment or schedule, or must outlive the session. That caller must decide to fire on its own trigger, such as the pull request opening, or it is the relay forbidden above.
 
 **A coordinator routine cannot dispatch, so it is not a rollback.** Keeping it disabled buys nothing: re-enabling it does not restore dispatching, because the refusal applies to it as before. It only sweeps and records alongside the job, from a prompt nothing keeps in step. When the coordinator moves to a scheduled job, delete the routine, or clear its schedule and its tokens. The job's rollback is the revert described under *The coordinator's job*.
@@ -110,7 +117,7 @@ jobs:
     timeout-minutes: 60
 ```
 
-It needs three credentials.
+It needs four credentials. The first three are the coordinator's. The fourth belongs to the job's own steps, and the coordinator session never sees it.
 
 **A read-only hosting credential covering every tracked repository.**
 - On GitHub, use a GitHub App installed on the tracked repositories and the coordinator's own. Give it read-only access to contents, issues, pull requests and metadata, and mint an installation token for each run.
@@ -129,6 +136,27 @@ It needs three credentials.
 
 **Each worker's fire token**, under the names in the routine table.
 
+**A credential that can open issues in the coordinator's own repository, for the job's notices.** The job opens an issue when the log is unreachable (*Raising an unreachable log*, below), and the coordinator's own credential is read-only, so it cannot.
+- Scope it to issue writes in the coordinator's repository and nothing else.
+- Use it only in the job's own steps, outside the coordinator session. The coordinator keeps only the read-only credential, so its hard limits stay enforced by the host.
+- On GitHub Actions, this is the workflow's built-in token with `issues: write`. Pass it only to the step that opens the issue, and check the repository out with `persist-credentials: false`. Otherwise the checkout stores the token in `.git/config`, where the coordinator's shell can read it.
+
+```yaml
+permissions:
+  contents: read
+  issues: write
+
+steps:
+  - uses: actions/checkout@v4
+    with:
+      persist-credentials: false
+  - name: Open the outage notice
+    if: steps.preflight.outputs.log_unreachable == 'true'
+    env:
+      GH_TOKEN: ${{ github.token }}
+    run: gh issue create --title "Night shift: log unreachable" --body "..."
+```
+
 Allow the coordinator only the tools it reads and fires with, through headless Claude Code's allowed-tools list: the hosting tools in read-only mode, the log's tools, and a shell for the fire call. It has no repositories to attach, because its credential already reads all of them.
 
 ## Raising an unreachable log
@@ -137,7 +165,7 @@ The coordinator skill requires an unreachable log to be raised where a person se
 
 1. **Before the sweep, ask the log's server whether the credential works.** Send its MCP endpoint an `initialize` request with the token. Anything but `200` means unreachable: `401` is an expired or revoked sign-in, and anything else is an outage. Do not judge by the stored expiry alone, or a revoked sign-in passes as a valid one.
 2. **If it is unreachable, leave the log's server out of the coordinator's MCP configuration.** The coordinator then finds its tools absent, which is the skill's own definition of unreachable, and does the hosting-platform work anyway.
-3. **Open an issue in the coordinator's repository before the coordinator runs**, so the notice exists before any dispatch.
+3. **Open an issue in the coordinator's repository before the coordinator runs**, so the notice exists before any dispatch. Use the job's notice credential, never one the coordinator holds.
 4. **Fail the job at the end**, so the host's own failure alert reaches a person.
 
 Publish the coordinator's final report somewhere a person reads, such as the run's summary page. On a night the log was unreachable, that report holds the only list of the night's dispatches.
