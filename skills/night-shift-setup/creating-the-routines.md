@@ -87,6 +87,10 @@ The budget belongs in the coordinator's prompt rather than in the skill, because
 
 The job runs the coordinator prompt through headless Claude Code (`claude -p`) on the schedule, with the coordinator's repository checked out. It reads the prompt file from the default branch on every run, so merging a prompt change deploys it, and reverting the commit rolls it back.
 
+**Pin what the job installs.** Install a fixed Claude Code version, never the latest, and pin each MCP server image by tag or digest. The reason is the one under **Commit what you install** in `night-shift-setup/SKILL.md`: a CLI release can change permission handling or output, and a server release can rename its tools.
+- **The pin in the job's definition is the only record of those versions.** Do not list them again beside the skills' upstream commits. A second list is a copy that can drift from the pin.
+- **An upgrade is a change of its own**, made after reading the release notes, as with a skill update.
+
 It needs three credentials.
 
 **A read-only hosting credential covering every tracked repository.**
