@@ -123,7 +123,7 @@ Read **[night-shift-log.md](night-shift-log.md)**.
 
 ### After each merge
 
-The person merges. After each one, before the next, follow *After each merge* in **[merging.md](merging.md)**: bring the default branch into the next layer up, confirm its CI by `event`, re-read mergeability per pull request, and confirm the merged pull request's issue closed.
+The person merges. After each one, before the next, follow *After each merge* in **[merging.md](merging.md)**: retarget the next layer up to the default branch if the host has not, bring the default branch into it, confirm its CI by `event`, re-read mergeability per pull request, and confirm the merged pull request's issue closed.
 
 ---
 
