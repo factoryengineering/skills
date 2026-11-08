@@ -22,6 +22,8 @@ The refusal applies to anything else a cloud session fires: a worker whose repos
 1. **Do the work inside the session, and fire nothing.** Run it in a subagent whose definition narrows its tools to what the work needs. The credential the work needs comes from the session's own environment, never from the repository. Prefer this wherever the work fits the session's environment, time and credentials: it adds no component, and the result lands in the session, which can act on it before it stops.
 2. **Move the fan-out to a caller outside the session** when the work needs a different checkout, environment or schedule, or must outlive the session. That caller must decide to fire on its own trigger, such as the pull request opening, or it is the relay forbidden above.
 
+**A coordinator routine cannot dispatch, so it is not a rollback.** Keeping it disabled buys nothing: re-enabling it does not restore dispatching, because the refusal applies to it as before. It only sweeps and records alongside the job, from a prompt nothing keeps in step. When the coordinator moves to a scheduled job, delete the routine, or clear its schedule and its tokens. The job's rollback is the revert described under *The coordinator's job*.
+
 ## Where each session runs
 
 Each worker checks out the repository it works, because it builds, tests and pushes there.
