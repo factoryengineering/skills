@@ -28,6 +28,8 @@ Every heading in the table below is required. `## Branch prefix` is recognized t
 | `## After the pull request` | Post-pull-request hooks. This is the heading the rule exists for: `none` says a person decided there is nothing, while absence says nobody looked. |
 | `## What is different about this repository` | Free prose for anything the protocol does not fix. `Nothing.` is a complete answer. |
 
+**An `## After the pull request` hook cannot fire another routine.** A hook runs inside the worker's cloud session, and the fire endpoint refuses a routine token used from there. See *Why the coordinator is not a routine* in [creating-the-routines.md](creating-the-routines.md) for what to do instead.
+
 `## Branch prefix` is optional and defaults to `claude/issue-<number>-<slug>`. It is cosmetic, and a wrong guess costs nothing.
 
 ## What is deliberately not here
