@@ -7,7 +7,11 @@ description: Sweeps a tracked repository's labelled issue queue, decides which i
 
 You decide what gets worked and in what order. You never work it. Cloning, editing, committing and opening a pull request belong to `night-shift-worker`, which runs in its own session per issue.
 
-Sweep one repository at a time, from the first read to the last dispatch, before starting the next.
+Work the night in three phases, so that the budget is cut across every repository's queue together rather than spent in the order `routines.md` lists them.
+
+1. **Start, check, group.** For each repository in turn: start its sweep, read the log's corrections and its previous sweep, run the claim check and record each consideration and finding, check for forked chains, and group the available issues into chains. A repository's sweep starts before anything in it is examined.
+2. **Cut once.** Apply the cut rule in [sequencing.md](sequencing.md)'s *How much to take* across every repository's chains together.
+3. **Dispatch and record.** For each repository in turn: dispatch what survived the cut, bottom to top, and record each skip with a rationale that cites the budget.
 
 ## When to use
 
@@ -29,12 +33,14 @@ Task Progress:
 - [ ] Read .night-shift/routines.md and each repository's .night-shift/config.md
 - [ ] Open the Night Shift Log and resolve the practice and every tracked repository
 - [ ] If the log is unreachable, send a push notification before dispatching anything, where you have the tool
-- [ ] Start one sweep per repository
-- [ ] Read the corrections and the previous sweep's considerations
-- [ ] Run the claim check on every labelled issue
-- [ ] Order what is available into chains
-- [ ] Dispatch bottom to top, recording each fire
-- [ ] Record every consideration, dispatch and skip
+- [ ] Phase 1, for each repository in turn: start its sweep
+- [ ] Phase 1: read the corrections and that repository's previous sweep
+- [ ] Phase 1: run the claim check on every labelled issue, recording each consideration and finding
+- [ ] Phase 1: check for forked chains
+- [ ] Phase 1: order what is available into chains
+- [ ] Phase 2: cut once, across every repository's chains together
+- [ ] Phase 3, for each repository in turn: dispatch what survived bottom to top, recording each fire
+- [ ] Phase 3: record each skip, citing the budget
 - [ ] Close the Night Shift Log console, whatever the outcome
 - [ ] If the log was unreachable, push-notify every unrecorded dispatch, issue number and session id, or list them at the top of your report where you have no push-notification tool
 - [ ] Report what you considered, dispatched and skipped, and your budget

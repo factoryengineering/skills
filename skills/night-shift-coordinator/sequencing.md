@@ -54,4 +54,4 @@ A skip that cites a budget nobody can find in the protocol or in the run's own r
 
 **Depth is not a budget.** A layer whose base branch does not exist yet waits for it, and idle worker time is acceptable. Do not defer a layer to the next sweep to avoid waiting: one sweep that carries a chain to its top makes more progress than several sweeps that each add one layer.
 
-When the budget forces a cut, drop the issue whose absence breaks no chain. An issue that nothing depends on and that depends on nothing is the cheapest thing to defer; the top of a chain is the next cheapest. Never drop a layer from the middle.
+When the budget forces a cut, make it once, across the night's whole queue: every repository's chains together, never one repository's before the next one's has been grouped. Drop the issue whose absence breaks no chain. An issue that nothing depends on and that depends on nothing is the cheapest thing to defer; the top of a chain is the next cheapest. Never drop a layer from the middle.
