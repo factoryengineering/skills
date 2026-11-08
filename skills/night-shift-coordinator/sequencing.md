@@ -36,12 +36,12 @@ Where one issue is plausibly a duplicate of another's root cause, put it last an
 
 Across groups, dispatch in parallel freely.
 
-## A lower neighbour counts as satisfied in three states, not two
+## A dependency counts as satisfied in three states, not two
 
-Never dispatch an issue whose lower neighbour is in none of these. Skip it, and say which issue it was waiting on.
+An issue's dependencies are its lower neighbour in the chain and every other issue on its **Depends on** line. Never dispatch an issue any of whose dependencies is in none of these states. Skip it, and name the dependency it was waiting on. Checking the neighbour alone is not enough: an issue further down that nobody is working leaves the upper worker waiting for a branch that will never appear.
 
 1. **Already merged.**
-2. **Being dispatched in this same sweep.** The upper worker resolves the branch by pattern and waits for it.
+2. **Being dispatched in this same sweep.** The upper worker resolves its branch by pattern and waits for it.
 3. **Carrying an unmerged branch, whether or not a pull request on it is still open.** This is the strongest of the three, because the branch already exists and the upper worker never waits at all.
 
 **Do not confuse the claim check with the dependency check.** An open pull request on an issue says only that a session claimed it, and the worker decides what that is worth. It says nothing about the issue above it, which is released to stack rather than blocked.
