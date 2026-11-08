@@ -67,7 +67,9 @@ The label alone does not mean an issue is available. **The work artifacts are th
 A pull request claims an issue when either of these holds.
 
 - **Its head branch matches the branch pattern for that issue**, `claude/issue-<number>-*`.
-- **Its body carries a closing keyword for that issue**, `Closes #<number>` or `Fixes #<number>`.
+- **Its body carries a closing keyword for that issue**, `<keyword> #<number>`, where the keyword is any of GitHub's nine: `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`. They match in any case, so `Resolves #203` claims #203 as surely as `Closes #203` does.
+
+**A cross-repository reference claims only in the repository it names.** `<keyword> owner/name#<number>` claims the issue when `owner/name` is the repository being swept. Naming any other repository, it closes an issue there, and here it is prose.
 
 A bare number anywhere else in a title or a body is prose, and it does not claim the issue. A pull request that explains a precedent, links a related decision, or quotes a dispatch names issues it is not working, and often names them precisely to say they are *not* done yet.
 
