@@ -619,6 +619,7 @@ specification reviewsInPractice = ($practice: NightShift.Practice) {
   nights = {
     $night: NightShift.Night [
       $night = $review->nights: NightShift.Night
+      $night->practice: NightShift.Practice = $practice
     ]
   } => {
     date = $night.date
@@ -661,6 +662,7 @@ specification currentVerdicts = ($practice: NightShift.Practice) {
   ]
   $repository: NightShift.Repository [
     $repository = $sweep->repository: NightShift.Repository
+    $repository->practice: NightShift.Practice = $practice
   ]
 } => {
   pullRequestNumber = $pullRequest.number
@@ -745,6 +747,7 @@ specification pendingDecisions = ($practice: NightShift.Practice) {
     ]
     $repository: NightShift.Repository [
       $repository = $sweep->repository: NightShift.Repository
+      $repository->practice: NightShift.Practice = $practice
     ]
   } => {
     number = $pullRequest.number

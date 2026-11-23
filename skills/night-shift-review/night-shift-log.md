@@ -12,7 +12,7 @@ The review reads far more than it writes. The reads are in [reading-the-night.md
 
 ## What you write, and only in phase 2
 
-**The review**, once the person has read the report:
+**The review**, once the person has read the report, and only on a log that has the Review (`describe startReview` answers). On one that does not, record none of these, and list in your final report what you could not record:
 
 - **`startReview`** first, with the nights you read. Every write below names the review it returns.
 - **One verdict per pull request you gave one**: `recommendMerge`, `recommendModify` with the change, `recommendReturn` with the issue's rewrite, or `recommendClose`. The verdict is a fact type, never a string, so `currentVerdicts` can tell them apart by structure. Pass the verdict it replaces from `currentVerdicts` as `prior`, or `[]` for a pull request no review has judged. A verdict takes the pull request's `PullRequestOpened`, so a worker pull request the log does not hold yet has to be recorded as an outcome first, under the rule for that below, or left without a verdict.
