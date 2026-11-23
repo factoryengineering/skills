@@ -43,7 +43,7 @@ Phase 2 — apply (only what the person approved)
 - [ ] For each approved modification: liveness check, claim, change, verify, push, release
 - [ ] Write each answer into its issue, then record it in the log
 - [ ] Record each correction the person made
-- [ ] After each merge the person makes: restack an unregistered chain, confirm CI by event, confirm the issue closed
+- [ ] After each merge the person makes: confirm a registered stack's host restack from the timeline, or restack an unregistered chain; confirm CI by event; confirm the issue closed
 - [ ] Close the log console, whatever happened
 - [ ] Report what was done, and what was not
 ```
@@ -123,7 +123,7 @@ Read **[night-shift-log.md](night-shift-log.md)**.
 
 ### After each merge
 
-The person merges. After each one, before the next, follow *After each merge* in **[merging.md](merging.md)**. A registered stack retargets and rebases its next layer on its own, so there you confirm it did. For an unregistered chain, retarget the next layer up to the default branch if the host has not and bring the default branch into it. Either way, confirm its CI by `event`, re-read mergeability per pull request, and confirm the merged pull request's issue closed.
+The person merges. After each one, before the next, follow *After each merge* in **[merging.md](merging.md)**. A registered stack retargets and rebases its next layer on its own, so there you confirm it did, from the layer's base and its timeline. For an unregistered chain, retarget the next layer up to the default branch if the host has not and bring the default branch into it. Either way, confirm its CI by `event`, re-read mergeability per pull request, and confirm the merged pull request's issue closed.
 
 ---
 
