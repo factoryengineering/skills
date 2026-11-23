@@ -21,6 +21,7 @@ The mechanics of opening a console, the two console forms that cost a retry each
 5. **`dispatchesAwaitingOutcome`** for each of the two nights. Each row is a dispatch with no pull request, no question and no finding of nothing to change.
 6. **`unansweredQuestions`** with the practice. This one is practice-wide on purpose. A question stays open until someone answers it, and answering it is the only thing that takes it off the list, so the list is as long as the backlog of decisions and no longer.
 7. **`correctedVerdicts`** with the practice. Report the corrections recorded since the earlier of the two nights; older ones are the coordinator's to read, not news.
+8. **`currentVerdicts`** and **`pendingDecisions`** with the practice. These are what the last morning concluded and what it left for the person, so this morning starts where that one stopped rather than from nothing. Each current verdict names its pull request: review that pull request again as usual, and say in the report whether the verdict still holds, and why it changed if it does not. A pull request a verdict names that the hosting platform shows merged or closed is one to record settled in phase 2. Each pending decision goes in the report's first section, with how long it has waited and the pull requests it holds back.
 
 **Do not read `sweepsInRepository` for a morning.** It lists every sweep a repository has ever had, and the morning needs two nights. It remains the way to reach a sweep the night-rooted views cannot see.
 
