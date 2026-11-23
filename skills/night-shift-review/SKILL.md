@@ -43,7 +43,7 @@ Phase 2 — apply (only what the person approved)
 - [ ] For each approved modification: liveness check, claim, change, verify, push, release
 - [ ] Write each answer into its issue, then record it in the log
 - [ ] Record each correction the person made
-- [ ] After each merge the person makes: restack, confirm CI by event, confirm the issue closed
+- [ ] After each merge the person makes: confirm a registered stack's host restack from the timeline, or restack an unregistered chain; confirm CI by event; confirm the issue closed
 - [ ] Close the log console, whatever happened
 - [ ] Report what was done, and what was not
 ```
@@ -113,7 +113,7 @@ Carry out what the person approved, item by item, and nothing they did not. An a
 8. **Comment on the pull request** saying what you changed and which clause or check it answers.
 9. **Release the claim**: edit it to `Night shift: claimed (<token>), released.`
 
-**Never rewrite history on a worker branch.** Bring a lower layer's changes into an upper one with a merge, not a rebase, so nothing needs a force push. A rewritten branch is one any session that holds a checkout of it can no longer push to.
+**Never rewrite history on a worker branch.** Bring a lower layer's changes into an upper one with a merge, not a rebase, so nothing needs a force push. A rewritten branch is one any session that holds a checkout of it can no longer push to. A registered stack is the one exception you do not cause: the host rebases its upper layers itself after each merge, so check out such a branch afresh after one.
 
 ### Record answers and corrections
 
@@ -123,7 +123,7 @@ Read **[night-shift-log.md](night-shift-log.md)**.
 
 ### After each merge
 
-The person merges. After each one, before the next, follow *After each merge* in **[merging.md](merging.md)**: retarget the next layer up to the default branch if the host has not, bring the default branch into it, confirm its CI by `event`, re-read mergeability per pull request, and confirm the merged pull request's issue closed.
+The person merges. After each one, before the next, follow *After each merge* in **[merging.md](merging.md)**. A registered stack retargets and rebases its next layer on its own, so there you confirm it did, from the layer's base and its timeline. For an unregistered chain, retarget the next layer up to the default branch if the host has not and bring the default branch into it. Either way, confirm its CI by `event`, re-read mergeability per pull request, and confirm the merged pull request's issue closed.
 
 ---
 
