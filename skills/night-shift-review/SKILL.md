@@ -33,7 +33,7 @@ Read `.night-shift/routines.md` in the coordinator's repository. It lists every 
 Task Progress:
 Phase 1 — review (read-only)
 - [ ] Read .night-shift/routines.md and every tracked repository's .night-shift/config.md
-- [ ] Read the night out of the log, and close the console
+- [ ] Read the night, and the last review's verdicts and pending decisions, out of the log, and close the console
 - [ ] Read the coordinator's report from where routines.md says it is published
 - [ ] List every open worker pull request across the tracked repositories, from the hosting API
 - [ ] Review each one, and give it one verdict
@@ -41,6 +41,7 @@ Phase 1 — review (read-only)
 - [ ] Write the report, and stop
 Phase 2 — apply (only what the person approved)
 - [ ] For each approved modification: liveness check, claim, change, verify, push, release
+- [ ] Record the review: startReview, then each verdict, and each decision left for the person
 - [ ] Write each answer into its issue, then record it in the log
 - [ ] Record each correction the person made
 - [ ] After each merge the person makes: confirm a registered stack's host restack from the timeline, or restack an unregistered chain; confirm CI by event; confirm the issue closed
@@ -114,6 +115,10 @@ Carry out what the person approved, item by item, and nothing they did not. An a
 9. **Release the claim**: edit it to `Night shift: claimed (<token>), released.`
 
 **Never rewrite history on a worker branch.** Bring a lower layer's changes into an upper one with a merge, not a rebase, so nothing needs a force push. A rewritten branch is one any session that holds a checkout of it can no longer push to. A registered stack is the one exception you do not cause: the host rebases its upper layers itself after each merge, so check out such a branch afresh after one.
+
+### Record the review
+
+The review's conclusions outlive the session only in the log. Once the person has read the report, record it: `startReview` with the nights you read, then one verdict per pull request you gave one, as the person left it, and one pending decision per item in the report's first section that the person has not yet settled. A verdict that replaces one from `currentVerdicts` names it as its `prior`. **[night-shift-log.md](night-shift-log.md)** has the actions. Nothing here replaces the issue: a decision is written into the issues it settles before it is recorded, exactly as an answer is.
 
 ### Record answers and corrections
 

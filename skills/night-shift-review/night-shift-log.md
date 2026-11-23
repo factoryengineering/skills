@@ -8,9 +8,19 @@ The review reads far more than it writes. The reads are in [reading-the-night.md
 
 1. to 5. The coordinator: resolve, `startNightlySweep`, read, `considerIssue` and a finding, `dispatchWork` or `skipIssue`.
 6. The worker: `openPullRequest`, `raiseQuestion`, or `findNoChange`.
-7. **You, in phase 2: `answerQuestion` and `correctVerdict`**, and an outcome a worker failed to record.
+7. **You, in phase 2: the review itself** (`startReview`, a verdict per pull request, `raiseDecision`, `recordDecision`, `observeMerge` and `observeClose`), **`answerQuestion` and `correctVerdict`**, and an outcome a worker failed to record.
 
 ## What you write, and only in phase 2
+
+**The review**, once the person has read the report, and only on a log that has the Review (`describe startReview` answers). On one that does not, record none of these, and list in your final report what you could not record:
+
+- **`startReview`** first, with the nights you read. Every write below names the review it returns.
+- **One verdict per pull request you gave one**: `recommendMerge`, `recommendModify` with the change, `recommendReturn` with the issue's rewrite, or `recommendClose`. The verdict is a fact type, never a string, so `currentVerdicts` can tell them apart by structure. Pass the verdict it replaces from `currentVerdicts` as `prior`, or `[]` for a pull request no review has judged. A verdict takes the pull request's `PullRequestOpened`, so a worker pull request the log does not hold yet has to be recorded as an outcome first, under the rule for that below, or left without a verdict.
+- **`raiseDecision`** for each item in the report's first section that the person has not settled, naming the pull requests it holds back.
+- **`recordDecision`** when the person settles one, from this morning or an earlier one, **after** the answer is written into the issues it settles. Say where it now lives. It takes the decision off `pendingDecisions`.
+- **`observeMerge`** or **`observeClose`** when the hosting platform shows a judged pull request merged or closed, including one from an earlier morning. It takes the pull request off `currentVerdicts`. Record only what the platform shows.
+
+A verdict the person overrules is recorded as they left it, not as you first gave it. The log keeps what the morning concluded with the person, not your draft.
 
 **`answerQuestion`**, once the answer is in the issue body. Take the `questionRef` from `unansweredQuestions`. Record the answer as the person gave it, and say where in the issue it now lives. Recording it is what takes the question off `unansweredQuestions`; it does not put the issue back in the queue.
 
