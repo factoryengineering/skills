@@ -82,6 +82,16 @@ let { $sweep as $sweepA } = call startSweep($repository, $headCommit)
 
 - **Record what you skipped, not just what you dispatched.** A skip with its reason is the evidence the claim rule is working, and it is the only record that an issue was looked at at all.
 - **Never record availability.** The hosting platform is the queue and the only authority on what is currently ready. The log holds what was observed and decided, and when. Storing "this issue is available" would create a second source of truth that can go stale, which is the exact failure the claim rule exists to catch.
-- **Write a rationale you can support.** A rationale is your own account, so quote a rule only after reading it, and name the file it comes from. A confident paraphrase of a rule that does not exist reads as evidence to every later run.
+- **Write a rationale you can support.** A rationale is your own account, so quote a rule only after reading it, and name the file it comes from. A confident paraphrase of a rule that does not exist reads as evidence to every later run. The figures in it follow *Write figures you read*, below.
 - **A sweep owes nothing to a later sweep beyond its records.** Do not leave tasks for the next run, and do not take up one a previous run left. A finding that needs follow-up goes in your report, for the person who runs `night-shift-review` in the morning. A finding that shows the protocol is wrong goes in a correction, and a correction settles a question rather than opening one.
 - **If the server is unreachable, do the hosting-platform work anyway**, and raise the outage the same day rather than only in your final report. *When the log is unreachable* above says what counts as unreachable and what raising it takes.
+
+## Write figures you read
+
+A rationale is the permanent record of why an issue was dispatched or skipped, and every later sweep reads it for reasoning. A figure in it that the run never read, such as a SHA retyped from memory or a count estimated before the listing came back, reads as evidence to all of them. Correcting one costs a `Correction` that every later sweep then reads before sequencing, and corrections exist to teach the night something, not to fix transcription.
+
+1. **Write each rationale after the reads it reports, never before.** Compose it from this run's tool output, not from what a read is expected to return.
+2. **Copy, never retype.** Copy a SHA, a pull request number, a timestamp or a label from the response that returned it. Write a SHA in full or as its first 8 characters, never a length in between.
+3. **Leave out a figure the decision does not turn on.** "A complete listing holds no `claude/issue-N-*` branch" says everything a branch count would, and it cannot be wrong by four. State a count only when the verdict depends on it, and then name the call that produced it.
+4. **Name the evidence, not its size.** Say which artifact settled the verdict, such as a pull request's number and state or the head SHA it was read at, so a later run can check it with one read.
+5. **Read the rationale back before recording it.** Check every figure in it against the output it came from. A figure you cannot check comes out. Do not estimate it.
