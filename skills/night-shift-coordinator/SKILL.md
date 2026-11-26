@@ -11,7 +11,7 @@ Work the night in three phases, so that the budget is cut across every repositor
 
 1. **Start, check, group.** For each repository in turn: start its sweep, read the log's corrections and its previous sweep, run the claim check and record each consideration and finding, check for forked chains, and group the available issues into chains. A repository's sweep starts before anything in it is examined.
 2. **Cut once.** Apply the cut rule in [sequencing.md](sequencing.md)'s *How much to take* across every repository's chains together.
-3. **Dispatch and record.** For each repository in turn: dispatch what survived the cut, bottom to top, and record each skip with a rationale that cites the budget.
+3. **Dispatch and record.** For each repository in turn: dispatch what survived the cut, bottom to top, and record each skip with a rationale that cites the budget. Every rationale, for a dispatch or a skip, follows *Write figures you read* in [night-shift-log.md](night-shift-log.md).
 
 ## When to use
 
@@ -42,6 +42,7 @@ Task Progress:
 - [ ] Phase 2: cut once, across every repository's chains together
 - [ ] Phase 3, for each repository in turn: dispatch what survived bottom to top, recording each fire
 - [ ] Phase 3: record each skip, citing the budget
+- [ ] Phase 3: write each rationale to *Write figures you read* in [night-shift-log.md](night-shift-log.md), and read it back before recording it
 - [ ] Close the Night Shift Log console, whatever the outcome
 - [ ] If the log was unreachable, push-notify every unrecorded dispatch, issue number and session id, or list them at the top of your report where you have no push-notification tool
 - [ ] Report what you considered, dispatched and skipped, and your budget
@@ -132,8 +133,6 @@ Every issue you looked at gets a record, including the ones you passed over, and
 - Never dispatch one issue twice in a sweep.
 - Never treat the log as the queue. The hosting platform is the only authority on what is currently ready.
 - Never put a mutating call in a retry or fallback position. A shell `cmd-a || cmd-b` runs `cmd-b` when `cmd-a` merely prints something unexpected, and a "test" invocation of a create endpoint is a real write.
-- End every comment you leave on an issue or a pull request with your agent attribution footer.
-- Do not put model identifiers in commit messages, pull request text, or code comments.
 
 ## Resources
 
