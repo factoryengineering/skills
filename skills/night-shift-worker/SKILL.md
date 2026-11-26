@@ -199,8 +199,6 @@ Only then run the config's `## After the pull request`. A value of `none` means 
 - Never base on any branch but the named lower issue's, or the default branch when the dispatch names none. A branch that holds work your issue needs is not a substitute for the one the dispatch named.
 - Never dispatch another issue's worker. You are one layer.
 - Never put a mutating call in a retry or fallback position. A shell `cmd-a || cmd-b` runs `cmd-b` when `cmd-a` merely prints something unexpected, and a "test" invocation of a create endpoint is a real write.
-- End every comment you leave on an issue or a pull request with your agent attribution footer.
-- Do not put model identifiers in commit messages, pull request text, or code comments.
 
 ## Resources
 

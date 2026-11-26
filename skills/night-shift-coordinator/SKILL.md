@@ -132,8 +132,6 @@ Every issue you looked at gets a record, including the ones you passed over, and
 - Never dispatch one issue twice in a sweep.
 - Never treat the log as the queue. The hosting platform is the only authority on what is currently ready.
 - Never put a mutating call in a retry or fallback position. A shell `cmd-a || cmd-b` runs `cmd-b` when `cmd-a` merely prints something unexpected, and a "test" invocation of a create endpoint is a real write.
-- End every comment you leave on an issue or a pull request with your agent attribution footer.
-- Do not put model identifiers in commit messages, pull request text, or code comments.
 
 ## Resources
 

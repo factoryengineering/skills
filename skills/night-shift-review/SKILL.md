@@ -143,8 +143,6 @@ The person merges. After each one, before the next, follow *After each merge* in
 - Never skip, disable, or quarantine a test to get a green build.
 - Never push an empty commit, and never close and reopen a pull request, to re-trigger CI.
 - Never put a mutating call in a retry or fallback position. A shell `cmd-a || cmd-b` runs `cmd-b` when `cmd-a` merely prints something unexpected.
-- End every comment you leave on an issue or a pull request with your agent attribution footer.
-- Do not put model identifiers in commit messages, pull request text, or code comments.
 
 ## Resources
 
