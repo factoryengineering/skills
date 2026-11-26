@@ -44,7 +44,7 @@ The cost the check exists to prevent is **two sessions pushing different fixes f
 
 | What the issue and pull request show | What it means | What to do |
 |---|---|---|
-| Another run's live claim on the issue, a check run in progress, or a push, comment or review inside the last six hours | A session is live | **Stop.** If a pull request exists, comment `Duplicate dispatch, no-op.` on it. If none does, leave no comment: the claim already shows the issue is held. Then **record `findNoChange`**, its summary saying a live session holds the issue and naming the evidence: the claim's comment id, the check run in progress, or the time of the push. |
+| Another run's live claim on the issue, a check run in progress, or a push, comment or review inside the last six hours | A session is live | **Stop.** If a pull request exists, comment `Duplicate dispatch, no-op.` on it. If none does, leave no comment: the claim already shows the issue is held. Then **record `findNoChange`**, its summary saying a live session holds the issue and naming the evidence: the claim's comment id, the check run in progress, or the kind and time of the recent push, comment or review. |
 | No pull request and no live claim | Nobody is working the issue | **Claim it**, below, then work it. |
 | A pull request with none of those for six hours, and some of the issue's acceptance unmet | A session stopped before the issue was done | **Claim it**, then **resume**, below. |
 | A pull request with none of those for six hours, which covers the acceptance | The work is done and a human has yet to merge | **Stop.** Leave no comment. Then **record `findNoChange`**, its summary naming the pull request and the head SHA whose diff covers the acceptance. |
@@ -76,7 +76,7 @@ Then copy this checklist and work it:
 Task Progress:
 - [ ] Read .night-shift/config.md and the files its `## Read first` names
 - [ ] Read the issue's claims and any pull request on it, and stop, no-op, work or resume
-- [ ] On a stop or a no-op: open the Night Shift Log, record `findNoChange`, close the console, and stop
+- [ ] On a duplicate-check stop row: open the Night Shift Log, record the `findNoChange` the row names, close the console, and stop
 - [ ] Claim the issue, re-read, and stand down if another live claim is older
 - [ ] Open the Night Shift Log and resolve this repository
 - [ ] Establish the work is warranted, per the config's `## Before you fix`
