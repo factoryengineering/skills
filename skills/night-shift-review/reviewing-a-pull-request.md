@@ -45,6 +45,7 @@ Where `## Authority` names documents, the pull request answers to the sections a
 ### 6. The stack
 
 - **The base is right.** The bottom layer bases on the default branch; each layer above on the branch of the issue its dispatch named. A layer based on `main` while its lower layer is unmerged shows that layer's work as deletions.
+- **No stale base.** Read the pull request individually, not from a list, and compare its `base.sha` with the current head SHA of the layer below. A base behind that head means this layer's CI ran on a tree that no longer exists. Name it as a finding, with both SHAs, and order the merge as *The order* in [merging.md](merging.md) says for a stale base.
 - **Registered, or said to be unregistered.** A chain the worker could not register says so in its body and names the layer below.
 - **No fork.** Two open pull requests whose base matches the worker branch pattern, `claude/issue-<number>-*`, cannot both be right, because a chain gives each layer one layer above it. Pull requests on the default branch are independent of each other, and many may share it.
 

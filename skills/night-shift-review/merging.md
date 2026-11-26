@@ -8,6 +8,11 @@ The person merges. Your part is an order in which every merge leaves the next on
 
 **A registered stack merges as one operation**, bottom-up, through the host's own stack merge. Recommend it as one item, and name the layers in it. If only some layers are ready, recommend merging up to the highest ready layer and say which stay open.
 
+**Unless a layer's base is stale.** A one-shot stack merge is safe only when each layer's CI ran on top of the lower layer's current head. A lower layer often gains a commit in its review round after the upper layer was cut from it, and then the upper layer's green CI tested a tree that no longer exists, and nobody has built the combined tree. Before recommending the stack as one item, read each upper layer's pull request individually and compare its `base.sha` with the current head SHA of the layer below it. A list response is not enough.
+
+- **Every layer's base matches its lower layer's head:** recommend the stack merge as one item, as above.
+- **Any layer's base is behind:** recommend merging layer by layer, bottom-up, through the lowest stale layer, with *After each merge* steps 0 and 3 to 5 before each next merge. Merging the layer below on its own makes the host rebase the stale layer on the server, and the `synchronize` that fires runs CI on the combined tree before anyone merges it. Once the lowest stale layer has merged, run this check again on the layers left: they may merge as one item only if every base now matches. Say in the report which layer is stale, the two SHAs that differ, and that this is why the merge is split.
+
 **An unregistered chain merges one layer at a time**, bottom first, with *After each merge* below between each.
 
 **Independent pull requests that share no files merge in any order.** Put them first, because nothing after them depends on them.
