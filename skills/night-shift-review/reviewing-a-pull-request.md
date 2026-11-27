@@ -24,11 +24,12 @@ One unmet clause is not **Merge**. Whether it is **Modify** or **Return** depend
 
 ### 3. Tests
 
-- **Behaviour changed, so a regression test exists** that fails before the change and passes after.
+- **Behaviour changed, so a regression test exists** that fails before the change on the old behaviour and passes after. A test whose only failure before the change is a missing name or a compile error has no before. It is a **Modify**: remove it, or replace it with one that drives the behaviour.
+- **Behaviour did not change, so no test was added.** An export, a type, a rename or a refactor rests on the tests that already drive the behaviour, and the pull request names them. That is correct, not a gap.
 - **No test can fail only because someone edited the thing it quotes.** A test that asserts a sentence, a default equal to the literal the source assigns, or a config line the config contains is a second copy of its subject. This is R5 in `refining-issues` and the worker's own rule. A copy is a **Modify**: remove the test, or replace it with one that derives one side.
 - **Where the change is prose with nothing to derive**, the pull request says so and stands on review. That is correct, not a gap.
 
-**Where the issue's acceptance asked for the copy, the defect is in the issue.** The verdict is **Return**, with R5's *Remove the freedom* as the rewrite.
+**Where the issue's acceptance asked for the copy, or for a test of a change that alters no behaviour, the defect is in the issue.** The verdict is **Return**, with R5's *Remove the freedom* as the rewrite.
 
 ### 4. Conformance
 
