@@ -108,7 +108,7 @@ Carry out what the person approved, item by item, and nothing they did not. An a
 2. **Claim the issue** the way a worker does, with a token of your own: `Night shift: claimed (<token>).` A dispatch that arrives while you work then stands down instead of pushing a second fix.
 3. **Check out the pull request's branch as it stands**, after `git fetch origin`. Push to that branch and no other, and never open a second pull request for the issue.
 4. **If the change alters what the issue asks for, change the issue first**, under `refining-issues`. The next worker to read this branch checks its diff against the issue's acceptance and nothing else, so an issue and a branch that disagree is a branch a worker will try to put back.
-5. **Make the change**, held to the same rules as the worker's: a regression test that can fail for a reason other than an edit to what it quotes, and no test totals in prose.
+5. **Make the change**, held to the same rules as the worker's: a regression test where behaviour changes, that fails before on the old behaviour and can fail for a reason other than an edit to what it quotes, and no test totals in prose.
 6. **Run every command under `## Verification commands` green**, in order, before you push.
 7. **Push, then confirm CI ran on the new head by its `event`**, as `night-shift-worker`'s `stacking.md` describes.
 8. **Comment on the pull request** saying what you changed and which clause or check it answers.
