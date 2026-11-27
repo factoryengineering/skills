@@ -46,7 +46,7 @@ let { $answer } = call answerQuestion(question: $questions[0], text: "Use the pe
 
 Open one console for phase 1's reads and **close it before you write the report.** The person may take an hour to read the report, and a console held open across that hour takes a slot from every run that starts in the meantime. Open a fresh one for phase 2's writes, and close it when they are done.
 
-**`close_console` is the last log step of each phase, including one that stops early.** The pool is shared with every night-shift run in the practice, capped at 16 open consoles, and it heals far too slowly to lean on. `night-shift-coordinator`'s `night-shift-log.md` has the full account under *Close the console, on every exit path*, including what to do when `create_console` is refused: work in a candidate that is clean and holds no staged facts, and **never work in or close a dirty one**, because its staged facts belong to a run that is not yours.
+**`close_console` is the last log step of each phase, including one that stops early.** The pool is shared with every night-shift run in the practice, and it is capped at 16 consoles that hold work, so a phase that stops while holding staged facts keeps a slot another run needs. `night-shift-coordinator`'s `night-shift-log.md` has the full account under *Close the console, on every exit path*, including what to do when `create_console` is refused: **work in none of the candidates and close none of them**, because each one holds another run's unsaved work.
 
 **A console that staged facts and rolled them back still returns them from its own reads.** Check anything you wrote from a fresh console.
 
